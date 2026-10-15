@@ -1,0 +1,2361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>FreshWash Laundry — Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202738;
+      --muted: #7b8494;
+      --line: #e9ecf1;
+      --surface: #fff;
+      --canvas: #f6f7fa;
+      --brand: #3478f6;
+      --brand-dark: #2464df;
+      --brand-soft: #edf3ff;
+      --green: #13855b;
+      --green-soft: #e9f7f0;
+      --amber: #ad6a17;
+      --amber-soft: #fff4e4;
+      --red: #c74848;
+      --red-soft: #fff0ef;
+      --shadow: 0 14px 42px rgb(31 45 75 / 9%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { min-width: 320px; margin: 0; color: var(--ink); background: var(--canvas); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgb(52 120 246 / 25%); outline-offset: 2px; }
+    .app-shell { min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 4; display: flex; width: 244px; flex-direction: column;
+      padding: 25px 15px 18px; background: #fff; border-right: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; margin: 0 7px 34px; font-size: 17px; font-weight: 750; letter-spacing: -.045em; white-space: nowrap; }
+    .brand-mark { display: grid; place-items: center; width: 37px; height: 37px; flex: 0 0 auto; color: white; background: var(--brand); border-radius: 12px; }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .nav-label { margin: 0 10px 9px; color: #9aa1ad; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 4px; }
+    .nav-link { display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 11px; border: 0; border-radius: 8px; color: #657083; background: transparent; font-size: 12px; font-weight: 560; text-align: left; transition: color .15s, background .15s; }
+    .nav-link svg { width: 17px; height: 17px; flex: 0 0 auto; }
+    .nav-link:hover { color: var(--brand); background: #f5f8ff; }
+    .nav-link.active { color: var(--brand); background: var(--brand-soft); font-weight: 680; }
+    .sidebar-bottom { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid var(--line); }
+    .shop-status { display: flex; align-items: center; gap: 9px; color: #637084; font-size: 11px; }
+    .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #32b17c; box-shadow: 0 0 0 3px #e4f7ef; }
+    .sidebar-footnote { margin-top: 8px; color: #a0a7b3; font-size: 10px; }
+    .workspace { min-height: 100vh; margin-left: 244px; }
+    .topbar { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 72px; padding: 0 34px; background: rgb(255 255 255 / 96%); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
+    .topbar-business { display: none; font-size: 14px; font-weight: 700; }
+    .global-search { position: relative; width: min(390px, 43vw); }
+    .global-search svg { position: absolute; top: 50%; left: 13px; width: 16px; height: 16px; color: #919aaa; transform: translateY(-50%); pointer-events: none; }
+    .global-search input { width: 100%; height: 39px; padding: 0 14px 0 39px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: #fafbfd; font-size: 12px; }
+    .global-search input::placeholder { color: #969eab; }
+    .search-results { position: absolute; top: calc(100% + 8px); left: 0; z-index: 7; width: min(440px, 85vw); max-height: min(420px, 70vh); overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 11px; background: white; box-shadow: var(--shadow); }
+    .search-results[hidden] { display: none; }
+    .search-group-label { padding: 9px 10px 5px; color: #969eab; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .search-result { display: flex; align-items: center; width: 100%; gap: 10px; padding: 9px 10px; border: 0; border-radius: 8px; color: var(--ink); background: white; text-align: left; }
+    .search-result:hover, .search-result:focus-visible { background: #f5f8ff; }
+    .search-result-icon { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 auto; border-radius: 9px; color: var(--brand); background: var(--brand-soft); }
+    .search-result-icon svg { width: 15px; height: 15px; }
+    .search-result-copy { min-width: 0; flex: 1; }
+    .search-result-title { overflow: hidden; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .search-result-meta { margin-top: 3px; color: #929baa; font-size: 9px; }
+    .search-empty { padding: 17px 12px; color: #7b8494; font-size: 11px; text-align: center; }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .date-block { text-align: right; }
+    .date-label { color: #a0a7b3; font-size: 10px; }
+    .today-date { margin-top: 3px; color: #505c70; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .avatar { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; color: #376bd3; background: #eaf1ff; font-size: 11px; font-weight: 700; }
+    .mobile-menu { display: none; }
+    main { width: min(1460px, 100%); margin: 0 auto; padding: 29px 34px 45px; }
+    .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+    h1 { margin: 0 0 6px; font-size: clamp(24px, 2.6vw, 30px); letter-spacing: -.045em; }
+    .page-subtitle { margin: 0; color: var(--muted); font-size: 12px; }
+    .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 39px; padding: 0 14px; border-radius: 8px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    .primary-button { border: 1px solid var(--brand); color: white; background: var(--brand); box-shadow: 0 3px 8px rgb(52 120 246 / 17%); }
+    .primary-button:hover { background: var(--brand-dark); }
+    .secondary-button { border: 1px solid var(--line); color: #596579; background: white; }
+    .secondary-button:hover { background: #f8f9fb; }
+    .primary-button svg, .secondary-button svg { width: 15px; height: 15px; }
+    .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 13px; margin-bottom: 20px; }
+    .stat-card { min-width: 0; min-height: 120px; padding: 16px 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+    .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 5px; color: #737e90; font-size: 10px; font-weight: 570; }
+    .stat-icon { display: grid; place-items: center; width: 29px; height: 29px; flex: 0 0 auto; color: var(--brand); background: var(--brand-soft); border-radius: 9px; }
+    .stat-icon svg { width: 15px; height: 15px; }
+    .stat-card:nth-child(2) .stat-icon, .stat-card:nth-child(6) .stat-icon { color: var(--amber); background: var(--amber-soft); }
+    .stat-card:nth-child(4) .stat-icon { color: var(--green); background: var(--green-soft); }
+    .stat-card:nth-child(5) .stat-icon { color: #8158d5; background: #f3edff; }
+    .stat-value { overflow: hidden; margin-top: 12px; font-size: clamp(20px, 2vw, 25px); font-weight: 730; letter-spacing: -.05em; text-overflow: ellipsis; white-space: nowrap; }
+    .stat-note { overflow: hidden; margin-top: 4px; color: #9ba3b0; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(270px, .9fr); gap: 17px; align-items: start; }
+    .left-column, .right-column { display: grid; gap: 17px; min-width: 0; }
+    .panel { overflow: hidden; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 13px; padding: 17px 18px; }
+    h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: -.02em; }
+    .panel-subtitle { margin: 4px 0 0; color: #929baa; font-size: 10px; }
+    .text-action { padding: 5px 0 5px 8px; border: 0; color: var(--brand); background: transparent; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .text-action:hover { color: var(--brand-dark); text-decoration: underline; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    thead { background: #fafbfc; }
+    th { padding: 10px 12px; color: #8992a0; font-size: 9px; font-weight: 670; letter-spacing: .055em; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 12px; border-top: 1px solid #eff1f4; font-size: 10px; vertical-align: middle; }
+    th:first-child, td:first-child { padding-left: 18px; }
+    th:last-child, td:last-child { padding-right: 18px; }
+    .customer-name { color: #313b4d; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .subtext { margin-top: 3px; color: #939baa; font-size: 9px; white-space: nowrap; }
+    .order-number { color: #657187; font-size: 9px; font-weight: 650; white-space: nowrap; }
+    .stage { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 15px; font-size: 9px; font-weight: 650; white-space: nowrap; }
+    .stage::before { width: 5px; height: 5px; border-radius: 50%; background: currentColor; content: ""; }
+    .stage-received, .stage-washing { color: #3766c9; background: #edf2ff; }
+    .stage-drying, .stage-ironing, .stage-packing { color: #a36616; background: #fff4e4; }
+    .stage-ready { color: #16845b; background: #e9f7f0; }
+    .stage-delivered { color: #677286; background: #f0f2f5; }
+    .payment-due { color: #ac6917; font-weight: 670; white-space: nowrap; }
+    .payment-clear { color: var(--green); font-weight: 630; white-space: nowrap; }
+    .empty-state { padding: 34px 18px; color: var(--muted); text-align: center; }
+    .empty-state h3 { margin: 8px 0 5px; color: var(--ink); font-size: 12px; }
+    .empty-state p { margin: 0; font-size: 10px; line-height: 1.6; }
+    .empty-icon { display: grid; place-items: center; width: 34px; height: 34px; margin: 0 auto; border-radius: 10px; color: var(--brand); background: var(--brand-soft); }
+    .empty-icon svg { width: 17px; height: 17px; }
+    .due-list { padding: 0 17px 7px; }
+    .due-item { display: grid; grid-template-columns: 31px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid #eff1f4; }
+    .due-item:first-child { border-top: 0; }
+    .due-icon { display: grid; place-items: center; width: 29px; height: 29px; color: var(--amber); background: var(--amber-soft); border-radius: 9px; }
+    .due-icon.overdue { color: var(--red); background: var(--red-soft); }
+    .due-icon svg { width: 15px; height: 15px; }
+    .due-name { overflow: hidden; font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .due-info { margin-top: 3px; color: #929baa; font-size: 9px; }
+    .due-date { color: #9a641c; font-size: 9px; font-weight: 650; text-align: right; white-space: nowrap; }
+    .due-date.overdue { color: var(--red); }
+    .workflow { padding: 0 17px 17px; }
+    .workflow-row { display: grid; grid-template-columns: 74px minmax(35px, 1fr) 23px; align-items: center; gap: 9px; margin-top: 14px; }
+    .workflow-name { color: #616d81; font-size: 10px; }
+    .workflow-track { height: 6px; overflow: hidden; border-radius: 6px; background: #f0f2f6; }
+    .workflow-fill { height: 100%; min-width: 0; border-radius: inherit; background: var(--brand); transition: width .2s ease; }
+    .workflow-row:nth-child(3) .workflow-fill { background: #5b83e5; }
+    .workflow-row:nth-child(4) .workflow-fill { background: #f1ad4d; }
+    .workflow-row:nth-child(5) .workflow-fill { background: #eb9c4f; }
+    .workflow-row:nth-child(6) .workflow-fill { background: #9174de; }
+    .workflow-row:nth-child(7) .workflow-fill { background: #32a577; }
+    .workflow-count { color: #667287; font-size: 10px; font-weight: 650; text-align: right; }
+    .profile-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .profile-title { display: flex; align-items: center; gap: 12px; }
+    .profile-avatar { display: grid; place-items: center; width: 43px; height: 43px; flex: 0 0 auto; border-radius: 13px; color: #376bd3; background: #eaf1ff; font-size: 13px; font-weight: 750; }
+    .profile-title h1 { margin-bottom: 4px; font-size: 23px; }
+    .profile-contact { color: var(--muted); font-size: 11px; }
+    .profile-actions { display: flex; gap: 8px; }
+    .customer-info-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 0 17px 16px; }
+    .info-tile { min-width: 0; padding: 11px 12px; border: 1px solid #eff1f5; border-radius: 8px; background: #fcfcfd; }
+    .info-label { color: #929baa; font-size: 9px; }
+    .info-value { overflow: hidden; margin-top: 5px; color: #394457; font-size: 10px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+    .history-filters { display: flex; flex-wrap: wrap; gap: 9px; padding: 0 17px 15px; }
+    .history-filters select, .history-filters input { min-width: 140px; min-height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; color: #596579; background: white; font-size: 10px; }
+    .tracking-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; padding: 0 17px 15px; }
+    .tracking-filters .field { min-width: 145px; }
+    .tracking-count { margin-left: auto; padding-bottom: 9px; color: var(--muted); font-size: 10px; }
+    .rack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 12px; padding: 0 17px 17px; }
+    .rack-card { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+    .rack-card.warning { border-color: #f0c47b; background: #fffbf2; }
+    .rack-card.full { border-color: #e7a1a1; background: #fff8f8; }
+    .rack-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .rack-card-heading h3 { margin: 0; color: var(--ink); font-size: 12px; }
+    .rack-capacity { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .rack-warning { margin-top: 10px; color: #a45f13; font-size: 10px; font-weight: 650; }
+    .rack-order { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 9px 0 0; margin-top: 9px; border-top: 1px solid var(--line); }
+    .rack-order-meta { min-width: 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .rack-order-meta strong { display: block; overflow: hidden; color: var(--ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .rack-config-form { display: grid; grid-template-columns: minmax(120px, 1fr) 125px auto auto; align-items: end; gap: 9px; padding: 0 17px 16px; }
+    .rack-config-row { display: grid; grid-template-columns: minmax(100px, 1fr) 120px auto auto auto; align-items: center; gap: 9px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+    .rack-config-row strong { overflow: hidden; color: var(--ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .rack-config-row input[type="number"] { width: 100%; min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 10px; }
+    .rack-config-row input[type="text"] { width: 100%; min-height: 34px; min-width: 0; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 10px; }
+    .rack-config-list { display: grid; gap: 9px; padding: 0 17px 17px; }
+    .rack-full-toggle { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .rack-assign-form { display: flex; align-items: center; gap: 6px; }
+    .rack-assign-form select { max-width: 145px; min-height: 31px; padding: 0 6px; border: 1px solid var(--line); border-radius: 6px; background: white; font-size: 9px; }
+    .rack-location-result { margin: 0 17px 15px; padding: 12px 14px; border: 1px solid #dbe7ff; border-radius: 9px; color: #52627b; background: #f7faff; font-size: 10px; }
+    .rack-location-result strong { color: #2e5fb8; }
+    .compact-button { min-height: 31px; padding: 0 9px; border: 1px solid var(--line); border-radius: 6px; color: #46536a; background: #fff; font-size: 9px; font-weight: 650; white-space: nowrap; }
+    .compact-button:hover { border-color: #b8c9e9; background: #f8faff; }
+    .history-items { display: grid; gap: 3px; min-width: 150px; }
+    .history-item { color: #5c687c; font-size: 9px; line-height: 1.45; white-space: normal; }
+    .history-item + .history-item { margin-top: 2px; }
+    .history-payment { min-width: 100px; }
+    .order-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 17px; }
+    .order-detail-heading h1 { font-size: 23px; }
+    .detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 16px 17px; }
+    .detail-item-list { display: grid; gap: 8px; padding: 0 17px 16px; }
+    .detail-item-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid #eff1f5; border-radius: 8px; color: #58657a; font-size: 10px; }
+    .timeline { display: grid; grid-template-columns: repeat(7, minmax(84px, 1fr)); gap: 0; overflow-x: auto; padding: 19px 17px 21px; }
+    .timeline-step { position: relative; min-width: 84px; color: #a0a7b3; font-size: 9px; text-align: center; }
+    .timeline-time { min-height: 12px; margin-top: 4px; color: #8b95a5; font-size: 8px; font-weight: 450; line-height: 1.3; }
+    .stage-history-list { display: grid; gap: 7px; padding: 0 17px 17px; }
+    .stage-history-label { margin-bottom: 1px; color: #58657a; font-size: 9px; font-weight: 650; }
+    .stage-history-entry { display: flex; justify-content: space-between; gap: 12px; color: #626f83; font-size: 9px; }
+    .stage-history-entry time { color: #929baa; text-align: right; }
+    .timeline-step:not(:last-child)::after { position: absolute; top: 9px; left: calc(50% + 12px); width: calc(100% - 24px); height: 2px; background: #e9ecf1; content: ""; }
+    .timeline-step.done:not(:last-child)::after { background: #6fa0ff; }
+    .timeline-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 19px; height: 19px; margin: 0 auto 8px; border: 2px solid #e2e6ed; border-radius: 50%; color: transparent; background: white; }
+    .timeline-dot svg { width: 11px; height: 11px; }
+    .timeline-step.done { color: #4168b8; font-weight: 630; }
+    .timeline-step.done .timeline-dot { border-color: #3478f6; color: white; background: #3478f6; }
+    .timeline-step.current { color: #2365df; }
+    .timeline-step.current .timeline-dot { box-shadow: 0 0 0 4px #eaf1ff; }
+    .payment-form { display: flex; align-items: flex-end; gap: 9px; padding: 0 17px 16px; }
+    .payment-form .field { width: min(220px, 55%); }
+    .payment-entry-form { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(135px, 1fr) minmax(90px, 1fr) minmax(120px, 1fr) auto; align-items: end; gap: 9px; padding: 0 17px 16px; }
+    .payment-entry-form .field input, .payment-entry-form .field select { min-height: 36px; padding: 7px 8px; font-size: 10px; }
+    .payment-status { display: inline-flex; padding: 4px 8px; border-radius: 12px; font-size: 9px; font-weight: 680; white-space: nowrap; }
+    .payment-status-paid { color: #16845b; background: #e9f7f0; }
+    .payment-status-partial { color: #a36616; background: #fff4e4; }
+    .payment-status-unpaid { color: #a63333; background: #fff0f0; }
+    .payment-history { padding: 0 16px 13px; }
+    .payment-history summary { color: var(--brand); cursor: pointer; font-size: 9px; font-weight: 650; }
+    .payment-history-list { display: grid; gap: 6px; padding-top: 8px; }
+    .payment-history-row { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(80px, auto) minmax(80px, auto) minmax(80px, 1fr); gap: 8px; color: #667287; font-size: 9px; }
+    .payment-row-details { min-width: 210px; }
+    .payment-row-details summary { color: var(--brand); cursor: pointer; font-size: 10px; font-weight: 650; }
+    .payment-row-actions { display: flex; flex-wrap: wrap; gap: 12px; padding: 0 17px 15px; }
+    .payment-stats { margin-bottom: 15px; }
+    .payment-summary { gap: 10px 18px; }
+    .report-page-actions, .report-export-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+    .report-controls { margin-bottom: 15px; }
+    .report-controls .panel-heading { align-items: center; }
+    .report-date-fields { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; padding: 0 17px 16px; }
+    .report-date-fields .field { width: min(220px, 100%); }
+    .report-date-fields .secondary-button { margin-bottom: 1px; }
+    .report-error { margin: 0 17px 15px; }
+    .reports-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .report-section { margin-bottom: 15px; }
+    .payment-export-action { display: flex; justify-content: flex-end; padding: 0 17px 12px; }
+    .feedback-banner { margin-bottom: 15px; padding: 11px 14px; border: 1px solid #ccebdc; border-radius: 8px; color: #226545; background: #effaf4; font-size: 11px; }
+    .receipt-print-root { display: none; }
+    .payment-summary { display: flex; flex-wrap: wrap; gap: 18px; padding: 0 17px 15px; color: #667287; font-size: 10px; }
+    .payment-summary strong { color: #384457; }
+    .item-editor { display: grid; gap: 8px; }
+    .item-editor-row { display: grid; grid-template-columns: minmax(100px, 1.2fr) 60px minmax(100px, 1fr) 80px 48px 30px; gap: 6px; align-items: center; }
+    .item-editor-row input, .item-editor-row select { width: 100%; min-width: 0; min-height: 38px; padding: 8px 9px; border: 1px solid #dfe4ec; border-radius: 8px; color: var(--ink); background: white; font-size: 10px; }
+    .order-page { display: grid; gap: 15px; }
+    .order-form-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, .8fr); gap: 15px; align-items: start; }
+    .order-form-column { display: grid; gap: 15px; min-width: 0; }
+    .form-section { padding: 17px; }
+    .form-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .form-section-heading h2 { font-size: 13px; }
+    .form-section-heading p { margin: 4px 0 0; color: #929baa; font-size: 10px; }
+    .form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .form-fields.full { grid-column: 1 / -1; }
+    .form-fields[hidden] { display: none; }
+    .customer-picker { position: relative; }
+    .customer-picker input { width: 100%; }
+    .customer-picker-results { position: absolute; top: calc(100% + 5px); left: 0; z-index: 2; width: 100%; max-height: 210px; overflow: auto; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: white; box-shadow: var(--shadow); }
+    .customer-picker-results[hidden] { display: none; }
+    .customer-choice { display: block; width: 100%; padding: 9px; border: 0; border-radius: 6px; color: var(--ink); background: white; text-align: left; }
+    .customer-choice:hover { background: #f3f6fc; }
+    .customer-choice-name { font-size: 10px; font-weight: 650; }
+    .customer-choice-meta { margin-top: 3px; color: #929baa; font-size: 9px; }
+    .selected-customer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 9px 10px; border: 1px solid #dce8ff; border-radius: 8px; background: #f5f8ff; }
+    .selected-customer[hidden] { display: none; }
+    .selected-customer-copy { min-width: 0; }
+    .selected-customer-name { overflow: hidden; color: #34435d; font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .selected-customer-meta { margin-top: 3px; color: #8490a2; font-size: 9px; }
+    .small-action { padding: 5px; border: 0; color: var(--brand); background: transparent; font-size: 9px; font-weight: 650; white-space: nowrap; }
+    .item-table { width: 100%; border-collapse: collapse; }
+    .item-table th { padding: 8px 5px; color: #8992a0; font-size: 9px; text-align: left; text-transform: uppercase; }
+    .item-table td { padding: 5px; border: 0; vertical-align: middle; }
+    .item-table th:first-child, .item-table td:first-child { padding-left: 0; }
+    .item-table th:last-child, .item-table td:last-child { padding-right: 0; }
+    .item-table input, .item-table select { width: 100%; min-width: 68px; min-height: 36px; padding: 7px 8px; border: 1px solid #dfe4ec; border-radius: 7px; color: var(--ink); background: white; font-size: 10px; }
+    .item-table .item-qty { min-width: 55px; }
+    .item-line-total { min-width: 62px; color: #536076; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .item-table .remove-item { min-width: 28px; width: 28px; height: 28px; }
+    .item-table-wrap { overflow-x: auto; }
+    .item-table { min-width: 620px; }
+    .totals-list { display: grid; gap: 10px; }
+    .total-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #687488; font-size: 10px; }
+    .total-row strong { color: #394457; font-size: 11px; }
+    .total-row.final { margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); color: #313c50; font-size: 12px; font-weight: 700; }
+    .total-row.final strong { color: var(--brand); font-size: 17px; }
+    .form-section .field input, .form-section .field select, .form-section .field textarea { font-size: 10px; }
+    .form-section .field textarea { min-height: 66px; }
+    .order-submit-row { display: flex; justify-content: flex-end; gap: 9px; padding: 0 2px; }
+    .success-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 17px; border: 1px solid #ccebdc; border-radius: 10px; background: #effaf4; }
+    .success-copy { display: flex; align-items: center; gap: 11px; }
+    .success-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 10px; color: var(--green); background: #dcf4e8; }
+    .success-icon svg { width: 18px; height: 18px; }
+    .success-title { color: #226545; font-size: 12px; font-weight: 700; }
+    .success-subtitle { margin-top: 4px; color: #55816b; font-size: 10px; }
+    .success-actions { display: flex; gap: 7px; }
+    .form-section-heading .required-note { color: #a0a7b3; font-size: 9px; white-space: nowrap; }
+    @media (max-width: 600px) {
+      .payment-entry-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .payment-entry-form > button, .payment-entry-form > .form-error { grid-column: 1 / -1; }
+      .payment-history-row { grid-template-columns: 1fr auto; }
+      .order-detail-heading .profile-actions { flex-wrap: wrap; }
+    }
+    @media print {
+      .sidebar, .topbar, footer, .profile-actions, .order-submit-row, .mobile-scrim, .no-print, button { display: none !important; }
+      .workspace { margin-left: 0 !important; }
+      main { width: 100% !important; padding: 0 !important; }
+      .receipt-print-root { display: block !important; }
+    }
+    .remove-item { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #f0d6d6; border-radius: 7px; color: var(--red); background: white; font-size: 17px; }
+    .item-editor-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+    .item-total { color: #667287; font-size: 10px; }
+    .add-item-button { padding: 7px 0; border: 0; color: var(--brand); background: transparent; font-size: 10px; font-weight: 650; }
+    .notice { margin-bottom: 15px; padding: 11px 14px; border: 1px solid #f0d6a8; border-radius: 8px; color: #704509; background: #fff8ea; font-size: 11px; line-height: 1.5; }
+    .notice[hidden] { display: none; }
+    .mobile-scrim { display: none; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 20px; background: rgb(20 29 46 / 45%); }
+    .modal-backdrop[hidden] { display: none; }
+    .dialog { width: min(620px, 100%); max-height: min(92vh, 850px); overflow-y: auto; padding: 24px; border-radius: 14px; background: white; box-shadow: var(--shadow); }
+    .dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+    .dialog-heading h2 { margin: 0 0 6px; font-size: 19px; }
+    .dialog-heading p { margin: 0; color: var(--muted); font-size: 11px; }
+    .close-button { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; color: #637086; background: white; font-size: 20px; line-height: 1; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #48556a; font-size: 10px; font-weight: 650; }
+    .field input, .field select, .field textarea { width: 100%; min-height: 39px; padding: 9px 10px; border: 1px solid #dfe4ec; border-radius: 8px; color: var(--ink); background: white; font-size: 11px; }
+    .field textarea { min-height: 68px; resize: vertical; }
+    .form-error { display: none; margin-top: 13px; padding: 9px 11px; border-radius: 7px; color: #a63333; background: #fff0f0; font-size: 11px; }
+    .form-error.visible { display: block; }
+    .dialog-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 19px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .dialog-actions-right { display: flex; gap: 9px; margin-left: auto; }
+    .delete-button { min-height: 36px; padding: 0 11px; border: 1px solid #f0d6d6; border-radius: 8px; color: var(--red); background: white; font-size: 11px; font-weight: 600; }
+    footer { margin-top: 19px; color: #969eab; font-size: 9px; text-align: center; }
+    @media (max-width: 1250px) {
+      .sidebar { width: 218px; }
+      .workspace { margin-left: 218px; }
+      main { padding-right: 23px; padding-left: 23px; }
+      .topbar { padding-right: 23px; padding-left: 23px; }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stat-card { min-height: 108px; }
+      .dashboard-grid { grid-template-columns: minmax(0, 1.45fr) minmax(250px, .85fr); }
+      .customer-info-grid, .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .order-form-grid { grid-template-columns: minmax(0, 1fr); }
+      .order-form-grid > .order-form-column:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 68px; align-items: center; padding-right: 9px; padding-left: 9px; }
+      .brand { margin: 0 0 32px; }
+      .brand-name, .nav-label, .nav-link span, .sidebar-bottom { display: none; }
+      .nav-list { width: 100%; }
+      .nav-link { justify-content: center; padding: 0; }
+      .workspace { margin-left: 68px; }
+      .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+      .reports-grid { grid-template-columns: minmax(0, 1fr); }
+      .right-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .topbar-business { display: block; }
+      .global-search { width: min(340px, 39vw); }
+    }
+    @media (max-width: 600px) {
+      .sidebar { width: 250px; align-items: stretch; padding: 22px 15px 18px; transform: translateX(-101%); transition: transform .2s ease; box-shadow: none; }
+      .sidebar.open { transform: translateX(0); box-shadow: var(--shadow); }
+      .brand { margin: 0 7px 28px; }
+      .brand-name, .nav-label, .nav-link span, .sidebar-bottom { display: block; }
+      .nav-link { justify-content: flex-start; padding: 0 11px; }
+      .workspace { margin-left: 0; }
+      .mobile-scrim.visible { position: fixed; inset: 0; z-index: 3; display: block; background: rgb(20 29 46 / 35%); }
+      .topbar { min-height: 62px; gap: 10px; padding: 0 14px; }
+      .mobile-menu { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 8px; color: #627087; background: white; }
+      .mobile-menu svg { width: 17px; height: 17px; }
+      .topbar-business { font-size: 12px; white-space: nowrap; }
+      .global-search { width: auto; flex: 1 1 auto; }
+      .global-search input { height: 35px; padding-left: 33px; font-size: 10px; }
+      .global-search svg { left: 11px; width: 14px; height: 14px; }
+      .header-right { gap: 7px; }
+      .date-label, .avatar { display: none; }
+      .today-date { font-size: 10px; }
+      main { padding: 22px 14px 35px; }
+      .page-heading { align-items: flex-start; flex-direction: column; }
+      .page-heading .primary-button { width: 100%; }
+      .report-page-actions { width: 100%; }
+      .report-page-actions .primary-button, .report-page-actions .secondary-button { flex: 1; }
+      .report-controls .panel-heading { align-items: flex-start; flex-direction: column; }
+      .report-export-actions { width: 100%; }
+      .stats { gap: 9px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat-card { min-height: 99px; padding: 12px; }
+      .stat-value { margin-top: 9px; font-size: 22px; }
+      .stat-top { font-size: 9px; }
+      .right-column { grid-template-columns: minmax(0, 1fr); }
+      .panel-heading { padding: 15px; }
+      .table-scroll table { min-width: 740px; }
+      .rack-config-form { grid-template-columns: 1fr 1fr; }
+      .rack-config-row { grid-template-columns: minmax(80px, 1fr) 85px auto; gap: 6px; padding: 8px; }
+      .rack-config-row .compact-button { grid-column: 1 / -1; justify-self: end; }
+      .rack-config-form, .rack-config-list { padding-right: 12px; padding-left: 12px; }
+      .rack-grid { grid-template-columns: 1fr; padding-right: 12px; padding-left: 12px; }
+      .customer-info-grid, .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .profile-top, .order-detail-heading { flex-direction: column; align-items: stretch; }
+      .profile-actions { width: 100%; }
+      .profile-actions button { flex: 1; }
+      .order-form-grid > .order-form-column:last-child { grid-template-columns: minmax(0, 1fr); }
+      .order-submit-row { flex-direction: column-reverse; }
+      .order-submit-row button { width: 100%; }
+      .success-banner { align-items: flex-start; flex-direction: column; }
+      .success-actions { width: 100%; }
+      .success-actions button { flex: 1; }
+      .item-editor-row { grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 58px 42px 25px; gap: 3px; }
+      .item-editor-row input, .item-editor-row select { padding-right: 5px; padding-left: 6px; font-size: 9px; }
+      .form-grid { gap: 12px; }
+      .dialog { padding: 19px; }
+    }
+    @media (max-width: 390px) {
+      .topbar-business { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .item-editor-row { grid-template-columns: minmax(0, 1fr) 35px minmax(0, 1fr) 48px 35px 23px; gap: 2px; }
+      .item-editor-row input, .item-editor-row select { padding-right: 4px; padding-left: 4px; font-size: 9px; }
+      .item-editor-row .remove-item { width: 24px; height: 28px; }
+      .dialog-actions { align-items: stretch; flex-direction: column-reverse; }
+      .dialog-actions-right { width: 100%; margin: 0; }
+      .dialog-actions-right button { flex: 1; }
+      .delete-button { align-self: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="mobile-scrim" id="mobile-scrim"></div>
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 8.5h14l-1 11H6l-1-11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M9 13h6M10 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+        <span class="brand-name">FreshWash Laundry</span>
+      </div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav-list">
+        <button class="nav-link active" type="button" data-view="dashboard" title="Dashboard">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="4" width="6" height="4" rx="1.3" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="11" width="6" height="9" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="14" width="7" height="6" rx="1.5" stroke="currentColor" stroke-width="1.7"/></svg><span>Dashboard</span>
+        </button>
+        <button class="nav-link" type="button" data-view="new-order" title="New Order">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg><span>New Order</span>
+        </button>
+        <button class="nav-link" type="button" data-view="customers" title="Customers">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.2a3 3 0 0 1 0 5.7M17 14a5 5 0 0 1 3.5 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Customers</span>
+        </button>
+        <button class="nav-link" type="button" data-view="orders" title="All Orders">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 5h13M7 12h13M7 19h13M3.5 5h.01M3.5 12h.01M3.5 19h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>All Orders</span>
+        </button>
+        <button class="nav-link" type="button" data-view="tracking" title="Laundry Tracking">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Laundry Tracking</span>
+        </button>
+        <button class="nav-link" type="button" data-view="racks" title="Rack Management">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16M6 5v14M18 5v14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Rack Management</span>
+        </button>
+        <button class="nav-link" type="button" data-view="payments" title="Payments">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M4 9.5h16M8 14.5h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Payments</span>
+        </button>
+        <button class="nav-link" type="button" data-view="reports" title="Reports">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 20V10m7 10V4m7 16v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3 20.5h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Reports</span>
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="shop-status"><span class="online-dot"></span><span>Shop is open</span></div>
+        <div class="sidebar-footnote">Local demo · This device only</div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div class="topbar-business">FreshWash Laundry</div>
+        <div class="global-search">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input id="global-search" type="search" placeholder="Search customers, mobile or order no." aria-label="Search customers, mobile numbers, or orders">
+          <div class="search-results" id="search-results" role="listbox" aria-label="Search results" hidden></div>
+        </div>
+        <div class="header-right">
+          <div class="date-block"><div class="date-label">TODAY</div><div class="today-date" id="today-date"></div></div>
+          <div class="avatar" aria-label="FreshWash">FW</div>
+        </div>
+      </header>
+
+      <main>
+        <div id="storage-notice" class="notice" role="alert" hidden></div>
+        <div id="page-content"></div>
+        <footer>FreshWash Laundry · Orders saved in this browser on this device</footer>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="order-modal" hidden>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <div class="dialog-heading">
+        <div><h2 id="dialog-title">New laundry order</h2><p>Enter customer details and order information.</p></div>
+        <button class="close-button" id="close-modal" type="button" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="order-form">
+        <div class="form-grid">
+          <div class="field"><label for="customer-name">Customer name *</label><input id="customer-name" name="customerName" required maxlength="80" placeholder="e.g. Asha Patel"></div>
+          <div class="field"><label for="customer-phone">Mobile number</label><input id="customer-phone" name="phone" type="tel" maxlength="30" placeholder="e.g. 98765 43210"></div>
+          <div class="field full">
+            <label>Clothing items and services *</label>
+            <div class="item-editor" id="item-editor"></div>
+            <div class="item-editor-footer"><button class="add-item-button" id="add-item" type="button">+ Add clothing item</button><span class="item-total" id="item-total">0 clothes</span></div>
+          </div>
+          <div class="field"><label for="process-stage">Current status *</label><select id="process-stage" name="stage" required><option value="Received">Received</option><option value="Washing">Washing</option><option value="Drying">Drying</option><option value="Ironing">Ironing</option><option value="Packing">Packing</option><option value="Ready">Ready for Delivery</option><option value="Delivered">Delivered</option></select></div>
+          <div class="field"><label for="rack-location">Rack / location</label><input id="rack-location" name="rack" maxlength="40" placeholder="e.g. Rack B - 04"></div>
+          <div class="field"><label for="order-total">Total bill *</label><input id="order-total" name="total" type="number" min="0" max="999999999" step="0.01" required placeholder="0.00"></div>
+          <div class="field"><label for="amount-paid">Advance paid</label><input id="amount-paid" name="paid" type="number" min="0" max="999999999" step="0.01" value="0"></div>
+          <div class="field"><label for="received-date">Date received *</label><input id="received-date" name="receivedDate" type="date" required></div>
+          <div class="field"><label for="delivery-date">Delivery date *</label><input id="delivery-date" name="deliveryDate" type="date" required></div>
+          <div class="field"><label for="actual-delivery-date">Actual delivery date</label><input id="actual-delivery-date" name="actualDeliveryDate" type="date"></div>
+          <div class="field full"><label for="order-notes">Notes</label><textarea id="order-notes" name="notes" maxlength="500" placeholder="Special instructions (optional)"></textarea></div>
+        </div>
+        <div class="form-error" id="form-error" role="alert"></div>
+        <div class="dialog-actions">
+          <button class="delete-button" id="delete-order" type="button" hidden>Delete order</button>
+          <div class="dialog-actions-right"><button class="secondary-button" id="cancel-modal" type="button">Cancel</button><button class="primary-button" type="submit">Save order</button></div>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "press-fold-orders-v1";
+      const stages = ["Received", "Washing", "Drying", "Ironing", "Packing", "Ready", "Delivered"];
+      const services = ["Regular Wash", "Wash and Iron", "Iron Only", "Dry Cleaning", "Premium Care"];
+      const stageLabels = { Ready: "Ready for Delivery" };
+      const currency = new Intl.NumberFormat(undefined, { style: "currency", currency: "INR", maximumFractionDigits: 2 });
+      const pageContent = document.getElementById("page-content");
+      const form = document.getElementById("order-form");
+      const modal = document.getElementById("order-modal");
+      const errorBox = document.getElementById("form-error");
+      const storageNotice = document.getElementById("storage-notice");
+      const globalSearch = document.getElementById("global-search");
+      const searchResults = document.getElementById("search-results");
+      let orders = [];
+      let customers = [];
+      let currentView = "dashboard";
+      let selectedCustomerId = null;
+      let currentOrderId = null;
+      let historyFilters = { status: "", from: "", to: "" };
+      let editingId = null;
+      let selectedOrderCustomerId = "";
+      let lastCreatedOrderId = "";
+      let storageAvailable = true;
+      let searchQuery = "";
+      let trackingSearch = "";
+
+      const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+      const formatMoney = (value) => currency.format(Number(value) || 0);
+      const localDate = (date = new Date()) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      const dateOffset = (offset) => {
+        const date = new Date();
+        date.setDate(date.getDate() + offset);
+        return localDate(date);
+      };
+      const formatDate = (value) => {
+        if (!value) return "—";
+        const [year, month, day] = value.split("-").map(Number);
+        return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }).format(new Date(year, month - 1, day));
+      };
+      const formatTimestamp = (value) => {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? "—" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+      };
+      const normalizePhone = (value) => {
+        let digits = String(value || "").replace(/\D/g, "");
+        if (digits.startsWith("0091") && digits.length > 12) digits = digits.slice(4);
+        else if (digits.startsWith("91") && digits.length > 10) digits = digits.slice(2);
+        else if (digits.startsWith("0") && digits.length === 11) digits = digits.slice(1);
+        return digits;
+      };
+      const normalizeName = (value) => String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+      const phoneMatches = (phone, query) => {
+        const value = String(query || "").trim();
+        if (!value || !/^[+\d\s().-]+$/.test(value)) return false;
+        const number = normalizePhone(phone);
+        let digits = value.replace(/\D/g, "");
+        if (digits.startsWith("0091") && digits.length > 4) digits = digits.slice(4);
+        else if (digits.startsWith("91") && digits.length > 2) digits = digits.slice(2);
+        else if (digits.startsWith("0") && digits.length === 11) digits = digits.slice(1);
+        return digits.length >= 3 && number.includes(digits);
+      };
+      const createId = (prefix) => `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+      const customerKey = (customer) => normalizePhone(customer.phone) ? `phone:${normalizePhone(customer.phone)}` : `name:${normalizeName(customer.name)}`;
+      const defaultStorageLocations = () => [
+        { name: "Rack A", capacity: 30, isFull: false },
+        { name: "Rack B", capacity: 30, isFull: false },
+        { name: "Shelf 1", capacity: 20, isFull: false },
+        { name: "Shelf 2", capacity: 20, isFull: false },
+        { name: "Bag B-12", capacity: 10, isFull: false }
+      ];
+      let storageLocations = [];
+      let trackingFilters = { stage: "", overdue: false };
+      let rackSearch = "";
+      let paymentFilter = "";
+      let reportFilters = { from: "", to: "" };
+      let feedbackMessage = "";
+      const orderPaymentsTotal = (order) => (Array.isArray(order.payments) ? order.payments : []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+      const orderPaid = (order) => roundMoney(Number(order.advance ?? order.paid ?? 0) + orderPaymentsTotal(order));
+      const paymentStatus = (order) => {
+        const paid = orderPaid(order);
+        const total = Math.max(0, Number(order.total) || 0);
+        return total === 0 || paid >= total ? "Paid" : paid <= 0 ? "Unpaid" : "Partial";
+      };
+      const paymentStatusBadge = (order) => `<span class="payment-status payment-status-${paymentStatus(order).toLocaleLowerCase()}">${paymentStatus(order)}</span>`;
+      const roundMoney = (amount) => Math.round((Number(amount) + Number.EPSILON) * 100) / 100;
+      const generateOrderNumber = () => {
+        const datePart = localDate().replace(/-/g, "");
+        const prefix = `FW-${datePart}-`;
+        const numbers = orders.map((order) => {
+          const match = String(order.id).match(new RegExp(`^${prefix}(\\d+)$`));
+          return match ? Number(match[1]) : 0;
+        });
+        let next = Math.max(0, ...numbers) + 1;
+        let orderNumber = `${prefix}${String(next).padStart(3, "0")}`;
+        while (orders.some((order) => order.id === orderNumber)) {
+          next += 1;
+          orderNumber = `${prefix}${String(next).padStart(3, "0")}`;
+        }
+        return orderNumber;
+      };
+      const showStorageError = (message) => {
+        storageAvailable = false;
+        storageNotice.textContent = message;
+        storageNotice.hidden = false;
+      };
+      const saveOrders = () => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 4, customers, orders, storageLocations }));
+          return true;
+        } catch (error) {
+          console.error("Could not save laundry orders.", error);
+          showStorageError("Your browser could not save these changes. Check available storage and browser settings, then try again.");
+          return false;
+        }
+      };
+      const sampleOrders = () => {
+        const today = localDate();
+        const orders = [
+          { id: "FW-2048", customerName: "Ananya Sharma", phone: "98765 43210", address: "Andheri West, Mumbai", items: [{ name: "Shirts", quantity: 5, service: "Wash and Iron" }, { name: "Trousers", quantity: 3, service: "Regular Wash" }], stage: "Ready", rack: "Rack A · 04", total: 640, advance: 300, payments: [{ amount: 100, date: dateOffset(-1) }], receivedDate: dateOffset(-2), deliveryDate: today, actualDeliveryDate: "", notes: "" },
+          { id: "FW-2047", customerName: "Rahul Mehta", phone: "98201 56789", items: [{ name: "Shirts", quantity: 6, service: "Regular Wash" }, { name: "Bedsheets", quantity: 2, service: "Wash and Iron" }, { name: "Trousers", quantity: 4, service: "Regular Wash" }], stage: "Ironing", rack: "Rack B · 02", total: 540, advance: 200, payments: [{ amount: 100, date: dateOffset(-2) }], receivedDate: dateOffset(-3), deliveryDate: dateOffset(-1), actualDeliveryDate: "", notes: "" },
+          { id: "FW-2046", customerName: "Priya Nair", phone: "98950 11223", items: [{ name: "Sarees", quantity: 2, service: "Dry Cleaning" }, { name: "Blouses", quantity: 3, service: "Premium Care" }], stage: "Drying", rack: "Drying bay", total: 1250, advance: 500, payments: [], receivedDate: dateOffset(-1), deliveryDate: today, actualDeliveryDate: "", notes: "" },
+          { id: "FW-2045", customerName: "Vikram Singh", phone: "98111 22334", items: [{ name: "T-shirts", quantity: 4, service: "Regular Wash" }, { name: "Jeans", quantity: 3, service: "Wash and Iron" }], stage: "Washing", rack: "Washer 2", total: 490, advance: 0, payments: [], receivedDate: today, deliveryDate: dateOffset(2), actualDeliveryDate: "", notes: "" },
+          { id: "FW-2044", customerName: "Aisha Khan", phone: "98990 76543", items: [{ name: "Kurtas", quantity: 4, service: "Iron Only" }], stage: "Packing", rack: "Rack C · 06", total: 240, advance: 240, payments: [], receivedDate: today, deliveryDate: today, actualDeliveryDate: "", notes: "" },
+          { id: "FW-2043", customerName: "Karan Patel", phone: "98790 45678", items: [{ name: "Shirts", quantity: 6, service: "Regular Wash" }, { name: "Trousers", quantity: 4, service: "Wash and Iron" }], stage: "Received", rack: "Intake shelf", total: 500, advance: 200, payments: [], receivedDate: today, deliveryDate: dateOffset(3), actualDeliveryDate: "", notes: "" },
+          { id: "FW-2042", customerName: "Ananya Sharma", phone: "98765 43210", address: "Andheri West, Mumbai", items: [{ name: "Dresses", quantity: 2, service: "Dry Cleaning" }, { name: "Scarves", quantity: 4, service: "Premium Care" }], stage: "Delivered", rack: "—", total: 900, advance: 900, payments: [], receivedDate: dateOffset(-6), deliveryDate: dateOffset(-3), actualDeliveryDate: dateOffset(-3), notes: "" },
+          { id: "FW-2041", customerName: "Meera Joshi", phone: "98670 98765", items: [{ name: "Shirts", quantity: 5, service: "Regular Wash" }, { name: "Sarees", quantity: 2, service: "Dry Cleaning" }, { name: "Trousers", quantity: 2, service: "Iron Only" }], stage: "Delivered", rack: "—", total: 405, advance: 405, payments: [], receivedDate: dateOffset(-8), deliveryDate: dateOffset(-5), actualDeliveryDate: dateOffset(-5), notes: "" },
+          { id: "FW-2040", customerName: "Suresh Iyer", phone: "98450 12345", address: "Indiranagar, Bengaluru", items: [{ name: "Formal shirts", quantity: 4, service: "Wash and Iron", unitPrice: 65 }, { name: "Trousers", quantity: 3, service: "Wash and Iron", unitPrice: 80 }], stage: "Washing", rack: "Rack A", total: 500, advance: 200, payments: [{ amount: 100, date: dateOffset(-1), method: "UPI", reference: "DEMO-UPI-2040" }], receivedDate: dateOffset(-1), deliveryDate: dateOffset(2), notes: "" },
+          { id: "FW-2039", customerName: "Neha Gupta", phone: "98100 45678", address: "Dwarka, New Delhi", items: [{ name: "Sarees", quantity: 2, service: "Dry Cleaning", unitPrice: 350 }, { name: "Blouses", quantity: 4, service: "Premium Care", unitPrice: 90 }], stage: "Drying", rack: "Shelf 1", total: 1060, advance: 500, payments: [], receivedDate: dateOffset(-2), deliveryDate: today, notes: "Handle zari work carefully." },
+          { id: "FW-2038", customerName: "Arjun Desai", phone: "98250 67890", address: "Navrangpura, Ahmedabad", items: [{ name: "Jeans", quantity: 3, service: "Regular Wash", unitPrice: 90 }, { name: "Jackets", quantity: 1, service: "Premium Care", unitPrice: 220 }], stage: "Ironing", rack: "Rack B", total: 490, advance: 0, payments: [], receivedDate: dateOffset(-4), deliveryDate: dateOffset(-1), notes: "" },
+          { id: "FW-2037", customerName: "Kavita Rao", phone: "98480 11223", address: "Banjara Hills, Hyderabad", items: [{ name: "Kurtas", quantity: 5, service: "Wash and Iron", unitPrice: 70 }, { name: "Dupattas", quantity: 3, service: "Regular Wash", unitPrice: 45 }], stage: "Packing", rack: "Bag B-12", total: 485, advance: 485, payments: [], receivedDate: dateOffset(-3), deliveryDate: today, notes: "" },
+          { id: "FW-2036", customerName: "Rohan Kapoor", phone: "98720 33445", address: "Sector 17, Chandigarh", items: [{ name: "Bedsheets", quantity: 3, service: "Wash and Iron", unitPrice: 120 }, { name: "Pillow covers", quantity: 6, service: "Regular Wash", unitPrice: 25 }], stage: "Ready", rack: "Shelf 2", total: 510, advance: 150, payments: [{ amount: 160, date: dateOffset(0), method: "Card", reference: "DEMO-CARD-2036" }], receivedDate: dateOffset(-2), deliveryDate: today, notes: "" },
+          { id: "FW-2035", customerName: "Sneha Kulkarni", phone: "98900 54321", address: "Kothrud, Pune", items: [{ name: "Salwar suits", quantity: 3, service: "Premium Care", unitPrice: 180 }, { name: "Scarves", quantity: 2, service: "Iron Only", unitPrice: 35 }], stage: "Received", rack: "Rack A", total: 610, advance: 0, payments: [], receivedDate: today, deliveryDate: dateOffset(4), notes: "" },
+          { id: "FW-2034", customerName: "Imran Sheikh", phone: "99000 77889", address: "T. Nagar, Chennai", items: [{ name: "T-shirts", quantity: 6, service: "Regular Wash", unitPrice: 45 }, { name: "Jeans", quantity: 2, service: "Wash and Iron", unitPrice: 90 }], stage: "Delivered", rack: "Rack B", total: 450, advance: 200, payments: [{ amount: 250, date: dateOffset(-2), method: "Cash", reference: "" }], receivedDate: dateOffset(-9), deliveryDate: dateOffset(-5), actualDeliveryDate: dateOffset(-5), notes: "" },
+          { id: "FW-2033", customerName: "Pooja Reddy", phone: "98660 22334", address: "Madhapur, Hyderabad", items: [{ name: "Curtains", quantity: 2, service: "Dry Cleaning", unitPrice: 280 }, { name: "Shirts", quantity: 4, service: "Iron Only", unitPrice: 30 }], stage: "Washing", rack: "Washing Bay", total: 680, advance: 300, payments: [], receivedDate: dateOffset(-1), deliveryDate: dateOffset(3), notes: "" },
+          { id: "FW-2032", customerName: "Dev Malhotra", phone: "98111 88990", address: "Rajouri Garden, New Delhi", items: [{ name: "Suits", quantity: 2, service: "Dry Cleaning", unitPrice: 450 }, { name: "Ties", quantity: 3, service: "Premium Care", unitPrice: 60 }], stage: "Delivered", rack: "Shelf 1", total: 1080, advance: 1080, payments: [], receivedDate: dateOffset(-12), deliveryDate: dateOffset(-8), actualDeliveryDate: dateOffset(-8), notes: "" },
+          { id: "FW-2031", customerName: "Lakshmi Menon", phone: "98950 66778", address: "Kakkanad, Kochi", items: [{ name: "Sarees", quantity: 2, service: "Premium Care", unitPrice: 260 }, { name: "Blouses", quantity: 4, service: "Iron Only", unitPrice: 35 }], stage: "Drying", rack: "Drying Bay", total: 660, advance: 220, payments: [], receivedDate: dateOffset(-3), deliveryDate: dateOffset(-1), notes: "" },
+          { id: "FW-2030", customerName: "Harpreet Kaur", phone: "98140 55667", address: "Model Town, Ludhiana", items: [{ name: "Woollen sweaters", quantity: 3, service: "Premium Care", unitPrice: 160 }, { name: "Shawls", quantity: 1, service: "Dry Cleaning", unitPrice: 300 }], stage: "Delivered", rack: "Rack A", total: 780, advance: 0, payments: [{ amount: 780, date: dateOffset(-1), method: "UPI", reference: "DEMO-UPI-2030" }], receivedDate: dateOffset(-10), deliveryDate: dateOffset(-6), actualDeliveryDate: dateOffset(-6), notes: "" },
+          { id: "FW-2029", customerName: "Nikhil Verma", phone: "98370 44556", address: "Rajpur Road, Dehradun", items: [{ name: "Jeans", quantity: 4, service: "Regular Wash", unitPrice: 85 }, { name: "Hoodies", quantity: 2, service: "Wash and Iron", unitPrice: 100 }], stage: "Ironing", rack: "Shelf 2", total: 540, advance: 140, payments: [], receivedDate: dateOffset(-5), deliveryDate: dateOffset(-2), notes: "" },
+          { id: "FW-2028", customerName: "Farah Ali", phone: "98300 99887", address: "Park Street, Kolkata", items: [{ name: "Dresses", quantity: 3, service: "Dry Cleaning", unitPrice: 240 }, { name: "Scarves", quantity: 3, service: "Regular Wash", unitPrice: 40 }], stage: "Ready", rack: "Rack B", total: 840, advance: 300, payments: [], receivedDate: dateOffset(-3), deliveryDate: today, notes: "" }
+        ];
+        return orders.map((order) => ({
+          ...order,
+          items: order.items.map((item) => Number.isFinite(Number(item.unitPrice))
+            ? { ...item, lineTotal: roundMoney(item.quantity * Number(item.unitPrice)) }
+            : item),
+          subtotal: order.total,
+          taxPercent: 0,
+          taxAmount: 0,
+          actualDeliveryDate: order.actualDeliveryDate || (order.stage === "Delivered" ? order.deliveryDate : ""),
+          paymentMethod: "Cash"
+        }));
+      };
+      const normalizeOrder = (source) => {
+        const legacyServices = { "Wash & iron": "Wash and Iron", "Wash & fold": "Regular Wash", "Dry cleaning": "Dry Cleaning", "Ironing only": "Iron Only" };
+        const fallbackService = legacyServices[source.service] || (services.includes(source.service) ? source.service : "Regular Wash");
+        const sourceItems = Array.isArray(source.items) ? source.items : [];
+        const sourceQuantity = sourceItems.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0) || Math.max(0, Number(source.quantity) || 0);
+        const hasRecordedItemPrices = sourceItems.some((item) => Number(item.unitPrice) > 0 || Number(item.lineTotal) > 0);
+        const fallbackUnitPrice = !hasRecordedItemPrices && sourceQuantity
+          ? Number(source.subtotal ?? source.total ?? 0) / sourceQuantity
+          : 0;
+        const items = Array.isArray(source.items) && source.items.length
+          ? source.items.map((item) => {
+            const quantity = Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0 ? Math.max(1, Math.floor(Number(item.quantity))) : 1;
+            const unitPrice = hasRecordedItemPrices ? Math.max(0, Number(item.unitPrice || 0)) : roundMoney(fallbackUnitPrice);
+            return {
+              name: String(item.name || "Clothing item").trim() || "Clothing item",
+              quantity,
+              service: services.includes(item.service) ? item.service : (legacyServices[item.service] || fallbackService),
+              unitPrice,
+              lineTotal: hasRecordedItemPrices
+                ? Math.max(0, Number(item.lineTotal ?? quantity * unitPrice))
+                : roundMoney(quantity * unitPrice)
+            };
+          })
+          : [{ name: "Clothing items", quantity: Math.max(1, Math.floor(Number(source.quantity || 1))), service: fallbackService }];
+        const payments = Array.isArray(source.payments) ? source.payments.map((payment) => ({
+          amount: Math.max(0, Number(payment.amount || 0)),
+          date: String(payment.date || source.receivedDate || localDate()),
+          method: ["Cash", "UPI", "Card"].includes(payment.method) ? payment.method : "Cash",
+          reference: String(payment.reference || "")
+        })) : [];
+        const additionalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+        const advance = Number(source.advance ?? Math.max(0, Number(source.paid || 0) - additionalPaid));
+        return {
+          ...source,
+          id: String(source.id || createId("FW")),
+          receiptNumber: String(source.receiptNumber || `RCP-${String(source.id || "NEW").replace(/[^a-zA-Z0-9-]/g, "")}`),
+          customerId: source.customerId || "",
+          customerName: String(source.customerName || source.name || "Unnamed customer").trim(),
+          phone: String(source.phone || ""),
+          address: String(source.address || ""),
+          items,
+          quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+          service: items[0].service,
+          stage: stages.includes(source.stage) ? source.stage : "Received",
+          rack: String(source.rack || "").trim().replace(/^—$/, ""),
+          total: Number.isFinite(Number(source.total)) ? Math.max(0, Number(source.total)) : 0,
+          subtotal: Math.max(0, Number(source.subtotal ?? source.total ?? 0)),
+          discount: Math.max(0, Number(source.discount || 0)),
+          taxPercent: Math.max(0, Number(source.taxPercent || 0)),
+          taxAmount: Math.max(0, Number(source.taxAmount || 0)),
+          advance,
+          paid: advance + additionalPaid,
+          paymentMethod: String(source.paymentMethod || "Cash"),
+          payments: payments.map((payment) => ({
+            amount: payment.amount,
+            date: payment.date,
+            method: ["Cash", "UPI", "Card"].includes(payment.method) ? payment.method : "Cash",
+            reference: String(payment.reference || "")
+          })),
+          receivedDate: String(source.receivedDate || localDate()),
+          deliveryDate: String(source.deliveryDate || source.receivedDate || localDate()),
+          actualDeliveryDate: String(source.actualDeliveryDate || ""),
+          notes: String(source.notes || ""),
+          washingInstructions: String(source.washingInstructions || ""),
+          stageHistory: Array.isArray(source.stageHistory) && source.stageHistory.length
+            ? source.stageHistory.filter((entry) => stages.includes(entry.stage)).map((entry) => ({
+              stage: entry.stage,
+              timestamp: String(entry.timestamp || `${source.receivedDate || localDate()}T12:00:00`)
+            }))
+            : [{ stage: stages.includes(source.stage) ? source.stage : "Received", timestamp: `${source.receivedDate || localDate()}T12:00:00` }],
+          storageLocation: source.stage === "Delivered" ? "" : Object.prototype.hasOwnProperty.call(source, "storageLocation")
+            ? String(source.storageLocation || "").trim()
+            : String(source.rack || "").trim().replace(/^—$/, "")
+        };
+      };
+      const normalizeStorageLocations = (savedLocations, includeDefaults = false) => {
+        const known = new Map();
+        [...(Array.isArray(savedLocations) ? savedLocations : []), ...(includeDefaults ? defaultStorageLocations() : [])].forEach((location) => {
+          const name = String(location.name || "").trim();
+          const key = name.toLocaleLowerCase();
+          if (!name || known.has(key)) return;
+          const capacity = location.capacity === null || location.capacity === "" || location.capacity === undefined
+            ? null
+            : Math.max(0, Math.floor(Number(location.capacity) || 0));
+          known.set(key, { name, capacity, isFull: Boolean(location.isFull) });
+        });
+        orders.forEach((order) => {
+          const name = order.storageLocation;
+          const key = String(name || "").trim().toLocaleLowerCase();
+          if (key && !known.has(key)) known.set(key, { name: String(name).trim(), capacity: null, isFull: false });
+          order.storageLocation = order.stage !== "Delivered" ? String(name || "").trim() : "";
+        });
+        return [...known.values()].sort((a, b) => a.name.localeCompare(b.name));
+      };
+      const transitionOrderStage = (order, stage) => {
+        if (!stages.includes(stage)) return false;
+        if (order.stage === stage) return true;
+        if (!Array.isArray(order.stageHistory)) order.stageHistory = [];
+        order.stageHistory.push({ stage, timestamp: new Date().toISOString() });
+        order.stage = stage;
+        if (stage === "Delivered") {
+          order.actualDeliveryDate = order.actualDeliveryDate || localDate();
+          order.storageLocation = "";
+        } else {
+          order.actualDeliveryDate = "";
+        }
+        return true;
+      };
+      const reconcileCustomers = (savedCustomers = []) => {
+        const known = new Map();
+        savedCustomers.forEach((customer) => {
+          const normalized = {
+            id: String(customer.id || createId("CUS")),
+            name: String(customer.name || customer.customerName || "").trim(),
+            phone: String(customer.phone || ""),
+            address: String(customer.address || ""),
+            registrationDate: String(customer.registrationDate || localDate())
+          };
+          const key = customerKey(normalized);
+          if (normalized.name && !known.has(key)) known.set(key, normalized);
+        });
+        orders.forEach((order) => {
+          const key = customerKey({ name: order.customerName, phone: order.phone });
+          let customer = known.get(key);
+          if (!customer && order.customerId) customer = [...known.values()].find((item) => item.id === order.customerId);
+          if (!customer) {
+            customer = { id: order.customerId || createId("CUS"), name: order.customerName, phone: order.phone, address: order.address, registrationDate: order.receivedDate };
+            known.set(key, customer);
+          } else {
+            if (!customer.phone && order.phone) customer.phone = order.phone;
+            if (order.customerName) customer.name = order.customerName;
+            if (!customer.address && order.address) customer.address = order.address;
+            if (order.receivedDate < customer.registrationDate) customer.registrationDate = order.receivedDate;
+          }
+          order.customerId = customer.id;
+          order.customerName = customer.name;
+          order.phone = customer.phone;
+          order.address = customer.address;
+        });
+        customers = [...known.values()];
+      };
+      const loadOrders = () => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) {
+            orders = sampleOrders().map(normalizeOrder);
+            reconcileCustomers();
+            storageLocations = normalizeStorageLocations(undefined, true);
+            saveOrders();
+            return orders;
+          }
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            orders = parsed.map(normalizeOrder);
+            reconcileCustomers();
+            storageLocations = normalizeStorageLocations(undefined, true);
+          } else if (parsed && Array.isArray(parsed.orders)) {
+            orders = parsed.orders.map(normalizeOrder);
+            reconcileCustomers(Array.isArray(parsed.customers) ? parsed.customers : []);
+            storageLocations = normalizeStorageLocations(parsed.storageLocations, Number(parsed.version || 0) < 4);
+          } else {
+            throw new TypeError("Saved laundry data does not contain a valid order list.");
+          }
+          saveOrders();
+          return orders;
+        } catch (error) {
+          console.error("Could not read saved laundry orders.", error);
+          showStorageError("Saved orders could not be read. Sample data is shown for this visit, but existing saved data has not been overwritten.");
+          orders = sampleOrders().map(normalizeOrder);
+          reconcileCustomers();
+          storageLocations = normalizeStorageLocations(undefined, true);
+          return orders;
+        }
+      };
+      const statusClass = (stage) => `stage-${String(stage || "").toLowerCase()}`;
+      const statusBadge = (stage) => `<span class="stage ${statusClass(stage)}">${escapeHtml(stageLabels[stage] || stage || "Unknown")}</span>`;
+      const searchMatches = (order) => [order.customerName, order.phone].some((value) => String(value || "").toLocaleLowerCase().includes(searchQuery))
+        || String(order.id || "").toLocaleLowerCase().includes(searchQuery.replace(/^#/, ""))
+        || phoneMatches(order.phone, searchQuery);
+      const dueBalance = (order) => Math.max(0, Number(order.total || 0) - orderPaid(order));
+      const locationOrders = (name, exceptId = "") => activeOrders().filter((order) =>
+        order.id !== exceptId && String(order.storageLocation || "").toLocaleLowerCase() === String(name || "").toLocaleLowerCase()
+      );
+      const locationClothes = (name, exceptId = "") => locationOrders(name, exceptId)
+        .reduce((sum, order) => sum + Number(order.quantity || 0), 0);
+      const locationCapacityExceeded = (location, exceptId = "") =>
+        location.capacity !== null && locationClothes(location.name, exceptId) > location.capacity;
+      const canAssignLocation = (location, order) => {
+        if (!location) return true;
+        if (location.name === order.storageLocation) return true;
+        if (location.isFull) return false;
+        return location.capacity === null || locationClothes(location.name, order.id) + Number(order.quantity || 0) <= location.capacity;
+      };
+      const uniqueCustomers = () => customers.length;
+      const activeOrders = () => orders.filter((order) => order.stage !== "Delivered");
+      const renderEmpty = (title, message) => `<div class="empty-state"><div class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 8h14l-1 11H6L5 8Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.7"/></svg></div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(message)}</p></div>`;
+      const sectionHeading = (title, subtitle, action = "") => `<div class="panel-heading"><div><h2>${escapeHtml(title)}</h2>${subtitle ? `<p class="panel-subtitle">${escapeHtml(subtitle)}</p>` : ""}</div>${action}</div>`;
+      const orderRows = (list) => {
+        if (!list.length) return `<tbody><tr><td colspan="9">${renderEmpty(searchQuery ? "No matching orders" : "No orders yet", searchQuery ? "Try another name, mobile number, or order number." : "Orders will appear here when they are created.")}</td></tr></tbody>`;
+        return `<tbody>${list.map((order) => `<tr>
+          <td><span class="order-number">#${escapeHtml(order.id)}</span></td>
+          <td><div class="customer-name">${escapeHtml(order.customerName)}</div></td>
+          <td>${escapeHtml(order.phone || "—")}</td>
+          <td>${escapeHtml(order.quantity)} pcs</td>
+          <td>${statusBadge(order.stage)}</td>
+          <td>${escapeHtml(formatDate(order.deliveryDate))}</td>
+          <td>${formatMoney(order.total)}</td>
+          <td><span class="${dueBalance(order) > 0 ? "payment-due" : "payment-clear"}">${formatMoney(dueBalance(order))}</span></td>
+          <td><button class="text-action" type="button" data-action="detail" data-id="${escapeHtml(order.id)}" aria-label="View order ${escapeHtml(order.id)}">View</button></td>
+        </tr>`).join("")}</tbody>`;
+      };
+      const ordersTable = (list) => `<div class="table-scroll"><table><thead><tr><th>Order no.</th><th>Customer name</th><th>Mobile number</th><th>Total clothes</th><th>Order status</th><th>Delivery date</th><th>Total bill</th><th>Pending amount</th><th></th></tr></thead>${orderRows(list)}</table></div>`;
+      const statCard = (label, value, note, icon) => `<article class="stat-card"><div class="stat-top"><span>${escapeHtml(label)}</span><span class="stat-icon" aria-hidden="true">${icon}</span></div><div class="stat-value">${escapeHtml(value)}</div><div class="stat-note">${escapeHtml(note)}</div></article>`;
+      const icons = {
+        people: '<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.2a3 3 0 0 1 0 5.7M17 14a5 5 0 0 1 3.5 4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+        bag: '<svg viewBox="0 0 24 24" fill="none"><path d="M5 8h14l-1 11H6L5 8Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.7"/></svg>',
+        clothes: '<svg viewBox="0 0 24 24" fill="none"><path d="M8 5h8l2 4-3 2v8H9v-8L6 9l2-4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
+        check: '<svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        calendar: '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5.5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 3.5v4M16 3.5v4M4 10h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+        money: '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 10h16M8 15h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'
+      };
+      const getCustomerOrders = (customer) => orders.filter((order) => order.customerId === customer.id)
+        .sort((a, b) => String(b.receivedDate).localeCompare(String(a.receivedDate)) || String(b.id).localeCompare(String(a.id)));
+      const paymentSummary = (order) => {
+        const additional = orderPaymentsTotal(order);
+        return `<div class="payment-summary"><span>Subtotal <strong>${formatMoney(order.subtotal)}</strong></span><span>Discount <strong>${formatMoney(order.discount)}</strong></span><span>Tax (${escapeHtml(order.taxPercent)}%) <strong>${formatMoney(order.taxAmount)}</strong></span><span>Total bill <strong>${formatMoney(order.total)}</strong></span><span>Advance <strong>${formatMoney(order.advance)}</strong></span><span>Additional payments <strong>${formatMoney(additional)}</strong></span><span>Amount paid <strong>${formatMoney(orderPaid(order))}</strong></span><span>Status <strong>${paymentStatusBadge(order)}</strong></span><span>Outstanding <strong class="${dueBalance(order) ? "payment-due" : "payment-clear"}">${formatMoney(dueBalance(order))}</strong></span></div>`;
+      };
+      const paymentHistoryMarkup = (order) => `<div class="payment-history-list">
+        ${Number(order.advance) > 0 ? `<div class="payment-history-row"><span>Advance · ${escapeHtml(order.paymentMethod || "Cash")}</span><span>${escapeHtml(formatDate(order.receivedDate))}</span><strong>${formatMoney(order.advance)}</strong><span>Initial advance</span></div>` : ""}
+        ${order.payments.map((payment) => `<div class="payment-history-row"><span>${escapeHtml(payment.method || "Cash")}</span><span>${escapeHtml(formatDate(payment.date))}</span><strong>${formatMoney(payment.amount)}</strong><span>${escapeHtml(payment.reference || "—")}</span></div>`).join("") || (Number(order.advance) > 0 ? "" : `<div class="empty-state"><p>No payments recorded.</p></div>`)}
+      </div>`;
+      const paymentEntryForm = (order) => dueBalance(order) > 0
+        ? `<form id="payment-form-${escapeHtml(order.id)}" data-payment-form data-id="${escapeHtml(order.id)}" class="payment-entry-form">
+            <div class="field"><label for="payment-amount-${escapeHtml(order.id)}">Amount</label><input id="payment-amount-${escapeHtml(order.id)}" name="amount" type="number" min="0.01" max="${dueBalance(order)}" step="0.01" required placeholder="Amount"></div>
+            <div class="field"><label for="payment-date-${escapeHtml(order.id)}">Payment date</label><input id="payment-date-${escapeHtml(order.id)}" name="date" type="date" required value="${localDate()}"></div>
+            <div class="field"><label for="payment-method-${escapeHtml(order.id)}">Method</label><select id="payment-method-${escapeHtml(order.id)}" name="method" required><option>Cash</option><option>UPI</option><option>Card</option></select></div>
+            <div class="field"><label for="payment-reference-${escapeHtml(order.id)}">Transaction reference</label><input id="payment-reference-${escapeHtml(order.id)}" name="reference" maxlength="80" placeholder="Optional"></div>
+            <button class="primary-button" type="submit">Record payment</button>
+            <div class="form-error" data-payment-error role="alert"></div>
+          </form>`
+        : `<div class="payment-history" role="status">This order is paid in full. Additional payment is not available.</div>`;
+      const customerProfileMarkup = (customer) => {
+        if (!customer) return `<div class="page-heading"><div><h1>Customer not found</h1><p class="page-subtitle">This customer record may have been removed.</p></div><button class="secondary-button" type="button" data-action="back">Back</button></div>${renderEmpty("Customer not found", "Search again by customer name, mobile number, or bill number.")}`;
+        const history = getCustomerOrders(customer).filter((order) => {
+          if (historyFilters.status && order.stage !== historyFilters.status) return false;
+          if (historyFilters.from && order.receivedDate < historyFilters.from) return false;
+          if (historyFilters.to && order.receivedDate > historyFilters.to) return false;
+          return true;
+        });
+        const initials = customer.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+        const options = stages.map((stage) => `<option value="${escapeHtml(stage)}" ${historyFilters.status === stage ? "selected" : ""}>${escapeHtml(stageLabels[stage] || stage)}</option>`).join("");
+        const table = history.length ? `<div class="table-scroll"><table><thead><tr><th>Order / received</th><th>Clothing items / service</th><th>Total clothes</th><th>Processing stage</th><th>Rack / location</th><th>Expected delivery</th><th>Actual delivery</th><th>Total bill</th><th>Advance</th><th>Additional payments</th><th>Outstanding</th><th></th></tr></thead><tbody>${history.map((order) => `<tr>
+          <td><div class="order-number">#${escapeHtml(order.id)}</div><div class="subtext">${escapeHtml(formatDate(order.receivedDate))}</div></td>
+          <td><div class="history-items">${order.items.map((item) => `<div class="history-item">${escapeHtml(item.name)} × ${escapeHtml(item.quantity)} · ${escapeHtml(item.service)}</div>`).join("")}</div></td>
+          <td>${escapeHtml(order.quantity)}</td>
+          <td>${statusBadge(order.stage)}</td>
+          <td>${escapeHtml(order.rack || "—")}</td>
+          <td>${escapeHtml(formatDate(order.deliveryDate))}</td>
+          <td>${escapeHtml(formatDate(order.actualDeliveryDate))}</td>
+          <td>${formatMoney(order.total)}</td>
+          <td>${formatMoney(order.advance)}</td>
+          <td class="history-payment">${order.payments.length ? order.payments.map((payment) => `<div class="history-item">${formatMoney(payment.amount)} · ${escapeHtml(formatDate(payment.date))}</div>`).join("") : formatMoney(0)}</td>
+          <td><span class="${dueBalance(order) ? "payment-due" : "payment-clear"}">${formatMoney(dueBalance(order))}</span></td>
+          <td><button class="text-action" type="button" data-action="detail" data-id="${escapeHtml(order.id)}">Details</button></td>
+        </tr>`).join("")}</tbody></table></div>` : renderEmpty("No orders found", "No orders match this customer's selected status and date filters.");
+        return `<div class="profile-top">
+          <div class="profile-title"><div class="profile-avatar" aria-hidden="true">${escapeHtml(initials || "C")}</div><div><h1>${escapeHtml(customer.name)}</h1><div class="profile-contact">${escapeHtml(customer.phone || "No mobile number")}</div></div></div>
+          <div class="profile-actions"><button class="secondary-button" type="button" data-action="customer-list">Customers</button><button class="primary-button" type="button" data-action="new-customer-order" data-id="${escapeHtml(customer.id)}">New order</button></div>
+        </div>
+        <section class="panel" aria-label="Customer information">${sectionHeading("Customer Information", "Linked customer record")}
+          <form id="customer-info-form" data-id="${escapeHtml(customer.id)}">
+            <div class="customer-info-grid">
+              <div class="info-tile"><div class="info-label">Customer ID</div><div class="info-value">${escapeHtml(customer.id)}</div></div>
+              <div class="field"><label for="profile-name">Full name</label><input id="profile-name" name="name" required maxlength="80" value="${escapeHtml(customer.name)}"></div>
+              <div class="field"><label for="profile-phone">Mobile number</label><input id="profile-phone" name="phone" type="tel" maxlength="30" value="${escapeHtml(customer.phone)}"></div>
+              <div class="info-tile"><div class="info-label">Registration date</div><div class="info-value">${escapeHtml(formatDate(customer.registrationDate))}</div></div>
+              <div class="field"><label for="profile-address">Address (optional)</label><input id="profile-address" name="address" maxlength="180" value="${escapeHtml(customer.address)}" placeholder="Customer address"></div>
+              <div class="info-tile"><div class="info-label">Order history</div><div class="info-value">${getCustomerOrders(customer).length} linked orders</div></div>
+              <div class="info-tile"><div class="info-label">Outstanding balance</div><div class="info-value">${formatMoney(getCustomerOrders(customer).reduce((sum, order) => sum + dueBalance(order), 0))}</div></div>
+            </div>
+            <div class="form-error" id="customer-form-error" role="alert"></div>
+            <div class="panel-heading" style="padding-top:0"><span></span><button class="secondary-button" type="submit">Save customer information</button></div>
+          </form>
+        </section>
+        <section class="panel" aria-label="Customer order history" style="margin-top:15px">
+          ${sectionHeading("Complete Order History", `${history.length} of ${getCustomerOrders(customer).length} orders · newest first`)}
+          <div class="history-filters">
+            <select id="history-status" aria-label="Filter history by order status"><option value="">All statuses</option>${options}</select>
+            <input id="history-from" type="date" aria-label="History received from" value="${escapeHtml(historyFilters.from)}">
+            <input id="history-to" type="date" aria-label="History received to" value="${escapeHtml(historyFilters.to)}">
+            <button class="text-action" type="button" data-action="clear-filters">Clear filters</button>
+          </div>${table}
+        </section>`;
+      };
+      const orderDetailMarkup = (order) => {
+        if (!order) return `${renderEmpty("Order not found", "This order is no longer available.")}`;
+        const customer = customers.find((item) => item.id === order.customerId);
+        const stageIndex = stages.indexOf(order.stage);
+        const timeline = stages.map((stage, index) => {
+          const complete = stageIndex >= 0 && index <= stageIndex;
+          const current = index === stageIndex;
+          const event = [...order.stageHistory].reverse().find((entry) => entry.stage === stage);
+          return `<div class="timeline-step ${complete ? "done" : ""} ${current ? "current" : ""}"><span class="timeline-dot">${complete ? icons.check : ""}</span>${escapeHtml(stageLabels[stage] || stage)}<div class="timeline-time">${event ? escapeHtml(formatTimestamp(event.timestamp)) : " "}</div></div>`;
+        }).join("");
+        return `<div class="order-detail-heading"><div><h1>Order #${escapeHtml(order.id)}</h1><p class="page-subtitle">Received ${escapeHtml(formatDate(order.receivedDate))} · ${customer ? escapeHtml(customer.name) : escapeHtml(order.customerName)}</p></div><div class="profile-actions"><button class="secondary-button" type="button" data-action="customer" data-id="${escapeHtml(order.customerId)}">Customer history</button><button class="secondary-button" type="button" data-action="edit" data-id="${escapeHtml(order.id)}">Edit order</button><button class="secondary-button" type="button" data-action="print-bill" data-id="${escapeHtml(order.id)}">Print Bill</button><button class="primary-button" type="button" data-action="print-receipt" data-id="${escapeHtml(order.id)}">Print Receipt</button></div></div>
+          <section class="panel" aria-label="Order processing timeline">${sectionHeading("Processing Timeline", `Current stage: ${stageLabels[order.stage] || order.stage}`)}<div class="timeline">${timeline}</div><div class="stage-history-list" aria-label="Stage change history"><div class="stage-history-label">Stage change history</div>${[...order.stageHistory].reverse().map((entry) => `<div class="stage-history-entry"><span>${escapeHtml(stageLabels[entry.stage] || entry.stage)}</span><time>${escapeHtml(formatTimestamp(entry.timestamp))}</time></div>`).join("")}</div></section>
+          <section class="panel" aria-label="Order details" style="margin-top:15px">${sectionHeading("Order Details", "Clothing, service, location and delivery")}
+            <div class="detail-grid">
+              <div class="info-tile"><div class="info-label">Customer</div><div class="info-value">${escapeHtml(order.customerName)}</div></div>
+              <div class="info-tile"><div class="info-label">Mobile number</div><div class="info-value">${escapeHtml(order.phone || "—")}</div></div>
+              <div class="info-tile"><div class="info-label">Total quantity</div><div class="info-value">${escapeHtml(order.quantity)} clothes</div></div>
+              <div class="info-tile"><div class="info-label">Current stage</div><div class="info-value">${escapeHtml(stageLabels[order.stage] || order.stage)}</div></div>
+              <div class="info-tile"><div class="info-label">Rack / shelf / bag</div><div class="info-value">${escapeHtml(order.storageLocation || (order.rack ? `${order.rack} (historical)` : "Not assigned"))}</div></div>
+              <div class="info-tile"><div class="info-label">Expected delivery</div><div class="info-value">${escapeHtml(formatDate(order.deliveryDate))}</div></div>
+              <div class="info-tile"><div class="info-label">Actual delivery</div><div class="info-value">${escapeHtml(formatDate(order.actualDeliveryDate))}</div></div>
+              <div class="info-tile"><div class="info-label">Date received</div><div class="info-value">${escapeHtml(formatDate(order.receivedDate))}</div></div>
+            </div>
+            <div class="detail-item-list">${order.items.map((item) => `<div class="detail-item-row"><span>${escapeHtml(item.name)} × ${escapeHtml(item.quantity)} · ${escapeHtml(item.service)}</span><span>${formatMoney(item.unitPrice)} each · ${formatMoney(item.lineTotal)}</span></div>`).join("")}</div>
+          </section>
+          <section class="panel" aria-label="Order payment history" style="margin-top:15px">${sectionHeading("Payments", "Advance and additional payments recorded")}
+            ${paymentSummary(order)}
+            <div class="payment-history">${paymentHistoryMarkup(order)}</div>
+            ${paymentEntryForm(order)}
+          </section>`;
+      };
+      const newOrderMarkup = () => {
+        const customer = customers.find((item) => item.id === selectedOrderCustomerId);
+        const nextBill = generateOrderNumber();
+        const successOrder = orders.find((order) => order.id === lastCreatedOrderId);
+        return `<div class="page-heading"><div><h1>New Laundry Order</h1><p class="page-subtitle">Create a customer bill with itemized services, automatic totals and payment tracking.</p></div></div>
+          ${successOrder ? `<section class="success-banner" role="status"><div class="success-copy"><span class="success-icon">${icons.check}</span><div><div class="success-title">Order ${escapeHtml(successOrder.id)} created successfully</div><div class="success-subtitle">${escapeHtml(successOrder.customerName)} · ${formatMoney(successOrder.total)} total · ${escapeHtml(formatDate(successOrder.receivedDate))}</div></div></div><div class="success-actions"><button class="secondary-button" type="button" data-action="detail" data-id="${escapeHtml(successOrder.id)}">View order</button><button class="secondary-button" type="button" data-action="print-bill" data-id="${escapeHtml(successOrder.id)}">Print Bill</button><button class="primary-button" type="button" data-action="print-receipt" data-id="${escapeHtml(successOrder.id)}">Print Receipt</button><button class="text-action" type="button" data-action="new-order-reset">Create another</button></div></section>` : ""}
+          <form id="page-order-form" class="order-page" novalidate>
+            <div class="order-form-grid">
+              <div class="order-form-column">
+                <section class="panel form-section" aria-label="Customer and order details">
+                  <div class="form-section-heading"><div><h2>Customer &amp; Order</h2><p>Find an existing customer or register a new one.</p></div><span class="required-note">* Required</span></div>
+                  <div class="form-fields">
+                    <div class="field full"><label for="order-customer-search">Existing customer search</label>
+                      <div class="customer-picker"><input id="order-customer-search" type="search" autocomplete="off" placeholder="Search name or Indian mobile number" aria-label="Search existing customers"><div class="customer-picker-results" id="customer-picker-results" role="listbox" hidden></div></div>
+                      <div class="selected-customer" id="selected-customer" ${customer ? "" : "hidden"}><div class="selected-customer-copy"><div class="selected-customer-name" id="selected-customer-name">${escapeHtml(customer ? customer.name : "")}</div><div class="selected-customer-meta" id="selected-customer-meta">${escapeHtml(customer ? `${customer.phone} · Customer ID ${customer.id}` : "")}</div></div><button class="small-action" type="button" data-action="clear-customer">Change</button></div>
+                      <input id="order-customer-id" name="customerId" type="hidden" value="${escapeHtml(customer ? customer.id : "")}">
+                    </div>
+                    <div class="field full"><button class="add-item-button" id="show-new-customer" data-action="show-new-customer" type="button">${customer ? "Or register a different customer" : "+ Register a new customer"}</button></div>
+                    <div class="form-fields full" id="new-customer-fields" hidden>
+                      <div class="field"><label for="order-new-customer-name">Customer full name *</label><input id="order-new-customer-name" name="newCustomerName" maxlength="80" placeholder="e.g. Asha Patel"></div>
+                      <div class="field"><label for="order-new-customer-phone">Indian mobile number *</label><input id="order-new-customer-phone" name="newCustomerPhone" type="tel" maxlength="18" placeholder="e.g. +91 98765 43210"></div>
+                      <div class="field full"><label for="order-new-customer-address">Address (optional)</label><input id="order-new-customer-address" name="newCustomerAddress" maxlength="180" placeholder="Customer address"></div>
+                    </div>
+                    <div class="field"><label for="page-received-date">Order received date *</label><input id="page-received-date" name="receivedDate" type="date" required value="${localDate()}"></div>
+                    <div class="field"><label for="page-delivery-date">Expected delivery date *</label><input id="page-delivery-date" name="deliveryDate" type="date" required value="${localDate()}"></div>
+                    <div class="field"><label>Order / bill number</label><input type="text" value="${escapeHtml(nextBill)}" readonly aria-label="Automatically generated bill number"></div>
+                    <div class="field"><label for="page-stage">Initial processing status *</label><select id="page-stage" name="stage" required>${stages.map((stage) => `<option value="${escapeHtml(stage)}" ${stage === "Received" ? "selected" : ""}>${escapeHtml(stageLabels[stage] || stage)}</option>`).join("")}</select></div>
+                    <div class="field"><label for="page-rack">Rack / shelf / bag location</label><input id="page-rack" name="rack" maxlength="60" placeholder="e.g. Rack A - 04"></div>
+                  </div>
+                </section>
+                <section class="panel form-section" aria-label="Clothing items and services">
+                  <div class="form-section-heading"><div><h2>Clothing &amp; Services</h2><p>Add each clothing type and choose its service and price.</p></div><button class="add-item-button" type="button" data-action="add-page-item">+ Add item</button></div>
+                  <div class="item-table-wrap"><table class="item-table"><thead><tr><th>Clothing type</th><th>Qty</th><th>Service</th><th>Price / item</th><th>Line total</th><th></th></tr></thead><tbody id="page-item-editor"></tbody></table></div>
+                  <div class="item-total" id="page-item-total" style="margin-top:8px">0 clothes</div>
+                </section>
+                <section class="panel form-section" aria-label="Customer notes and washing instructions">
+                  <div class="form-section-heading"><div><h2>Notes &amp; Instructions</h2><p>Optional details for the laundry team or customer.</p></div></div>
+                  <div class="form-fields">
+                    <div class="field"><label for="page-customer-notes">Customer notes</label><textarea id="page-customer-notes" name="notes" maxlength="500" placeholder="Notes for this order"></textarea></div>
+                    <div class="field"><label for="page-washing-instructions">Special washing instructions</label><textarea id="page-washing-instructions" name="washingInstructions" maxlength="500" placeholder="e.g. cold wash, handle with care"></textarea></div>
+                  </div>
+                </section>
+              </div>
+              <div class="order-form-column">
+                <section class="panel form-section" aria-label="Bill summary">
+                  <div class="form-section-heading"><div><h2>Bill Summary</h2><p>Totals update automatically as you edit items.</p></div></div>
+                  <div class="totals-list">
+                    <div class="total-row"><span>Total quantity</span><strong id="page-total-quantity">0 clothes</strong></div>
+                    <div class="total-row"><span>Subtotal</span><strong id="page-subtotal">${formatMoney(0)}</strong></div>
+                    <div class="field"><label for="page-discount">Discount amount</label><input id="page-discount" name="discount" type="number" min="0" max="999999999" step="0.01" value="0"></div>
+                    <div class="field"><label for="page-tax-percent">Tax percentage (%)</label><input id="page-tax-percent" name="taxPercent" type="number" min="0" max="100" step="0.01" value="0"></div>
+                    <div class="total-row"><span>Tax</span><strong id="page-tax">${formatMoney(0)}</strong></div>
+                    <div class="total-row final"><span>Final bill</span><strong id="page-final-bill">${formatMoney(0)}</strong></div>
+                  </div>
+                </section>
+                <section class="panel form-section" aria-label="Payment">
+                  <div class="form-section-heading"><div><h2>Payment</h2><p>Record the advance paid by the customer.</p></div></div>
+                  <div class="form-fields">
+                    <div class="field"><label for="page-advance">Advance payment</label><input id="page-advance" name="advance" type="number" min="0" step="0.01" value="0"></div>
+                    <div class="field"><label for="page-payment-method">Payment method</label><select id="page-payment-method" name="paymentMethod"><option>Cash</option><option>UPI</option><option>Card</option></select></div>
+                  </div>
+                  <div class="total-row" style="margin-top:15px"><span>Outstanding balance</span><strong id="page-outstanding">${formatMoney(0)}</strong></div>
+                </section>
+                <div class="form-error" id="page-order-error" role="alert"></div>
+              </div>
+            </div>
+            <div class="order-submit-row"><button class="secondary-button" type="button" data-action="back">Cancel</button><button class="primary-button" type="submit">Create laundry order</button></div>
+          </form>`;
+      };
+      const dashboardMarkup = () => {
+        const today = localDate();
+        const active = activeOrders();
+        const processing = active.filter((order) => ["Received", "Washing", "Drying", "Ironing", "Packing"].includes(order.stage));
+        const todayDeliveries = active.filter((order) => order.deliveryDate === today);
+        const ready = active.filter((order) => order.stage === "Ready");
+        const pending = orders.reduce((sum, order) => sum + dueBalance(order), 0);
+        const processingClothes = processing.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
+        const overdue = active.filter((order) => order.deliveryDate <= today).sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate));
+        const stageCounts = Object.fromEntries(stages.slice(0, 6).map((stage) => [stage, active.filter((order) => order.stage === stage).length]));
+        const maxStage = Math.max(1, ...Object.values(stageCounts));
+        const recent = [...orders].filter(searchMatches).sort((a, b) => String(b.receivedDate).localeCompare(String(a.receivedDate))).slice(0, 6);
+        const dueItems = overdue.filter(searchMatches);
+        const workflow = stages.slice(0, 6).map((stage) => `<div class="workflow-row"><span class="workflow-name">${escapeHtml(stageLabels[stage] || stage)}</span><div class="workflow-track"><div class="workflow-fill" style="width:${Math.round(stageCounts[stage] / maxStage * 100)}%"></div></div><span class="workflow-count">${stageCounts[stage]}</span></div>`).join("");
+        return `<div class="page-heading"><div><h1>Dashboard</h1><p class="page-subtitle">Here's what's happening at your laundry today.</p></div><button class="primary-button" type="button" data-action="new"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>New laundry order</button></div>
+          <section class="stats" aria-label="Business summary">
+            ${statCard("Total Customers", String(uniqueCustomers()), "Unique customers on record", icons.people)}
+            ${statCard("Active Orders", String(active.length), "Orders not yet delivered", icons.bag)}
+            ${statCard("Clothes in Processing", String(processingClothes), "Pieces across active washing steps", icons.clothes)}
+            ${statCard("Ready for Delivery", String(ready.length), "Orders waiting for pickup", icons.check)}
+            ${statCard("Today's Deliveries", String(todayDeliveries.length), "Due to customers today", icons.calendar)}
+            ${statCard("Pending Payments", formatMoney(pending), "Outstanding across all orders", icons.money)}
+          </section>
+          <div class="dashboard-grid"><div class="left-column">
+            <section class="panel" aria-label="Recent orders">${sectionHeading("Recent Orders", "Latest laundry received", '<button class="text-action" type="button" data-nav="orders">View all orders →</button>')}${ordersTable(recent)}</section>
+            <section class="panel" aria-label="Overdue and due today">${sectionHeading("Overdue or Due Today", `${dueItems.length} order${dueItems.length === 1 ? "" : "s"} need attention`)}<div class="due-list">${dueItems.length ? dueItems.map((order) => {
+              const isOverdue = order.deliveryDate < today;
+              return `<div class="due-item"><span class="due-icon ${isOverdue ? "overdue" : ""}" aria-hidden="true">${icons.calendar}</span><div><div class="due-name">${escapeHtml(order.customerName)} <span class="order-number">· #${escapeHtml(order.id)}</span></div><div class="due-info">${escapeHtml(order.quantity)} clothes · ${escapeHtml(stageLabels[order.stage] || order.stage)}</div></div><div class="due-date ${isOverdue ? "overdue" : ""}">${isOverdue ? "Overdue" : "Due today"}<div class="subtext">${escapeHtml(formatDate(order.deliveryDate))}</div></div></div>`;
+            }).join("") : `<div class="empty-state"><div class="empty-icon" aria-hidden="true">${icons.check}</div><h3>All caught up</h3><p>No overdue orders or deliveries due today.</p></div>`}</div></section>
+          </div><div class="right-column">
+            <section class="panel" aria-label="Laundry workflow">${sectionHeading("Laundry Workflow", "Orders currently at each step")}<div class="workflow">${workflow}</div></section>
+            <section class="panel" aria-label="Today's delivery list">${sectionHeading("Today's Deliveries", `${todayDeliveries.length} expected today`)}<div class="due-list">${todayDeliveries.filter(searchMatches).length ? todayDeliveries.filter(searchMatches).map((order) => `<div class="due-item"><span class="due-icon" aria-hidden="true">${icons.bag}</span><div><div class="due-name">${escapeHtml(order.customerName)}</div><div class="due-info">#${escapeHtml(order.id)} · ${escapeHtml(order.quantity)} clothes</div></div>${statusBadge(order.stage)}</div>`).join("") : `<div class="empty-state"><div class="empty-icon" aria-hidden="true">${icons.calendar}</div><h3>No deliveries today</h3><p>Orders due today will show up here.</p></div>`}</div></section>
+          </div></div>`;
+      };
+      const trackingMarkup = () => {
+        const active = activeOrders().filter((order) =>
+          (!trackingFilters.stage || order.stage === trackingFilters.stage)
+          && (!trackingFilters.overdue || order.deliveryDate < localDate())
+          && (!searchQuery || searchMatches(order))
+        ).sort((a, b) => String(a.deliveryDate).localeCompare(String(b.deliveryDate)));
+        const matchingCount = active.filter((order) =>
+          !trackingSearch || `${order.id} ${order.customerName} ${order.phone} ${normalizePhone(order.phone)} ${order.storageLocation || order.rack}`.toLocaleLowerCase().includes(trackingSearch.toLocaleLowerCase())
+        ).length;
+        const rows = active.map((order) => `<tr data-tracking-row data-phone="${escapeHtml(order.phone)}" data-search="${escapeHtml(`${order.id} ${order.customerName} ${order.phone} ${normalizePhone(order.phone)} ${order.storageLocation || order.rack}`.toLocaleLowerCase())}" ${trackingSearch && !`${order.id} ${order.customerName} ${order.phone} ${normalizePhone(order.phone)} ${order.storageLocation || order.rack}`.toLocaleLowerCase().includes(trackingSearch.toLocaleLowerCase()) ? "hidden" : ""}>
+          <td><button class="text-action" type="button" data-action="detail" data-id="${escapeHtml(order.id)}">#${escapeHtml(order.id)}</button></td>
+          <td><span class="customer-name">${escapeHtml(order.customerName)}</span></td>
+          <td>${escapeHtml(order.quantity)} pcs</td>
+          <td>${statusBadge(order.stage)}</td>
+          <td>${escapeHtml(formatDate(order.deliveryDate))}${order.deliveryDate < localDate() ? `<div class="subtext payment-due">Overdue</div>` : ""}</td>
+          <td>${escapeHtml(order.storageLocation || "Not assigned")}</td>
+          <td><div class="rack-assign-form"><select data-stage-select="${escapeHtml(order.id)}" aria-label="New stage for order ${escapeHtml(order.id)}">${stages.map((stage) => `<option value="${escapeHtml(stage)}" ${stage === order.stage ? "selected" : ""}>${escapeHtml(stageLabels[stage] || stage)}</option>`).join("")}</select><button class="compact-button" type="button" data-action="save-stage" data-id="${escapeHtml(order.id)}">Update</button></div></td>
+        </tr>`).join("");
+        const options = stages.filter((stage) => stage !== "Delivered").map((stage) => `<option value="${escapeHtml(stage)}" ${trackingFilters.stage === stage ? "selected" : ""}>${escapeHtml(stageLabels[stage] || stage)}</option>`).join("");
+        return `<div class="page-heading"><div><h1>Laundry Tracking</h1><p class="page-subtitle">Follow active orders through each processing stage. Delivered orders are hidden from active work.</p></div><button class="primary-button" type="button" data-action="new">New laundry order</button></div>
+          <section class="panel" aria-label="Active laundry orders">${sectionHeading("Active Work", `${active.length} active order${active.length === 1 ? "" : "s"}`)}
+            <div class="tracking-filters">
+              <div class="field"><label for="tracking-search">Search active orders</label><input id="tracking-search" type="search" value="${escapeHtml(trackingSearch)}" placeholder="Customer, order, mobile or location"></div>
+              <div class="field"><label for="tracking-stage-filter">Process stage</label><select id="tracking-stage-filter"><option value="">All active stages</option>${options}</select></div>
+              <label class="rack-full-toggle"><input id="tracking-overdue-filter" type="checkbox" ${trackingFilters.overdue ? "checked" : ""}> Overdue only</label>
+              <button class="secondary-button" type="button" data-action="clear-tracking-filters">Clear filters</button>
+              <span class="tracking-count" id="tracking-count">${matchingCount} matching</span>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>Order number</th><th>Customer</th><th>Quantity</th><th>Current process</th><th>Expected delivery</th><th>Rack / bag</th><th>Change stage</th></tr></thead><tbody>${rows}<tr data-tracking-empty ${matchingCount ? "hidden" : ""}><td colspan="7">${renderEmpty("No active orders found", trackingFilters.overdue ? "No overdue active orders match the selected filters." : "Active laundry will appear here when orders are received.")}</td></tr></tbody></table></div>
+          </section>`;
+      };
+      const rackMarkup = () => {
+        const active = activeOrders().filter((order) => !searchQuery || searchMatches(order));
+        const assignedLocations = active.map((order) => order.storageLocation).filter(Boolean);
+        const locations = [...storageLocations];
+        assignedLocations.forEach((name) => {
+          if (!locations.some((location) => location.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+            locations.push({ name, capacity: null, isFull: false });
+          }
+        });
+        const cards = locations.map((location) => {
+          const stored = locationOrders(location.name);
+          const clothes = stored.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
+          const exceeded = locationCapacityExceeded(location);
+          const atCapacity = location.capacity !== null && clothes >= location.capacity;
+          const warning = location.isFull || exceeded || atCapacity;
+          const storageWarning = location.isFull ? "Marked full — do not assign additional orders."
+            : exceeded ? "Capacity exceeded. Reassign orders or adjust the configured capacity."
+              : atCapacity ? "Capacity reached. This location cannot accept more clothes."
+                : "";
+          const orderMarkup = stored.map((order) => `<div class="rack-order"><div class="rack-order-meta"><strong>${escapeHtml(order.customerName)} · #${escapeHtml(order.id)}</strong>${escapeHtml(order.quantity)} clothes · ${escapeHtml(stageLabels[order.stage] || order.stage)}</div><button class="compact-button" type="button" data-action="detail" data-id="${escapeHtml(order.id)}">Details</button></div>`).join("");
+          const searchText = `${location.name} ${stored.map((order) => `${order.customerName} ${order.id} ${order.phone} ${normalizePhone(order.phone)}`).join(" ")}`.toLocaleLowerCase();
+          return `<article class="rack-card ${warning ? "warning" : ""} ${location.isFull ? "full" : ""}" data-rack-card data-search="${escapeHtml(searchText)}">
+            <div class="rack-card-heading"><div><h3>${escapeHtml(location.name)}</h3><div class="rack-capacity">${stored.length} order${stored.length === 1 ? "" : "s"} · ${clothes} / ${location.capacity === null ? "∞" : location.capacity} clothes</div></div>${location.isFull ? `<span class="stage stage-delivered">Full</span>` : ""}</div>
+            ${storageWarning ? `<div class="rack-warning">${escapeHtml(storageWarning)}</div>` : ""}
+            ${orderMarkup || `<div class="rack-order-meta" style="margin-top:10px">No active orders stored here.</div>`}
+          </article>`;
+        }).join("");
+        const orderRows = active.map((order) => {
+          const options = storageLocations.map((location) => {
+            const allowed = canAssignLocation(location, order);
+            const used = locationClothes(location.name, order.id);
+            const status = location.isFull ? " · Full" : location.capacity !== null && used + Number(order.quantity || 0) > location.capacity ? " · Capacity exceeded" : "";
+            return `<option value="${escapeHtml(location.name)}" ${location.name === order.storageLocation ? "selected" : ""} ${allowed ? "" : "disabled"}>${escapeHtml(location.name)}${status}</option>`;
+          }).join("");
+          return `<tr data-rack-order-row data-search="${escapeHtml(`${order.customerName} ${order.id} ${order.phone} ${normalizePhone(order.phone)} ${order.storageLocation || order.rack}`.toLocaleLowerCase())}">
+            <td><button class="text-action" type="button" data-action="detail" data-id="${escapeHtml(order.id)}">#${escapeHtml(order.id)}</button></td>
+            <td><span class="customer-name">${escapeHtml(order.customerName)}</span></td>
+            <td>${escapeHtml(order.quantity)} clothes</td><td>${statusBadge(order.stage)}</td>
+            <td><form class="rack-assign-form" data-order-location-form="${escapeHtml(order.id)}"><select name="location" aria-label="Storage location for order ${escapeHtml(order.id)}"><option value="">Not assigned</option>${options}</select><button class="compact-button" type="submit">Save</button></form><div class="form-error" data-assignment-error role="alert"></div></td>
+          </tr>`;
+        }).join("");
+        const configRows = storageLocations.map((location) => {
+          const inUse = locationOrders(location.name).length > 0;
+          return `<form class="rack-config-row" data-location-row="${escapeHtml(location.name)}">
+            <input type="text" name="name" maxlength="40" required aria-label="Location name" value="${escapeHtml(location.name)}">
+            <input type="number" name="capacity" min="1" max="100000" step="1" aria-label="Clothing capacity for ${escapeHtml(location.name)}" placeholder="Unlimited" value="${location.capacity === null ? "" : escapeHtml(location.capacity)}">
+            <label class="rack-full-toggle"><input type="checkbox" name="isFull" ${location.isFull ? "checked" : ""}> Full</label>
+            <button class="compact-button" type="button" data-action="save-location" data-id="${escapeHtml(location.name)}">Save location</button>
+            <button class="compact-button" type="button" data-action="delete-location" data-id="${escapeHtml(location.name)}" ${inUse ? "disabled" : ""}>Remove</button>
+          </form>`;
+        }).join("");
+        return `<div class="page-heading"><div><h1>Rack Management</h1><p class="page-subtitle">Manage storage locations, capacity and active order assignments.</p></div></div>
+          <section class="panel" aria-label="Find a customer's laundry location">${sectionHeading("Find stored laundry", "Search any customer, mobile number or bill to see its current or historical location")}
+            <div class="history-filters"><input id="rack-search" type="search" value="${escapeHtml(rackSearch)}" placeholder="Customer, mobile or order number" aria-label="Search rack locations"></div>
+            <div class="rack-location-result" id="rack-search-result" role="status"></div>
+          </section>
+          <section class="panel" style="margin-top:15px" aria-label="Configured storage locations">${sectionHeading("Storage Locations", "Live order and clothing counts · capacities are measured in clothing items")}
+            <div class="rack-grid" id="rack-cards">${cards}<div data-rack-empty hidden>${renderEmpty("No locations match", "Try another customer, order number, or rack name.")}</div></div>
+          </section>
+          <section class="panel" style="margin-top:15px" aria-label="Active storage assignments">${sectionHeading("Active Order Assignments", `${active.length} orders can be assigned or moved`)}
+            <div class="table-scroll"><table><thead><tr><th>Order</th><th>Customer</th><th>Clothes</th><th>Current stage</th><th>Assign rack / bag location</th></tr></thead><tbody>${orderRows}<tr data-rack-order-empty hidden><td colspan="5">${renderEmpty("No active work", "Delivered orders no longer occupy storage locations.")}</td></tr></tbody></table></div>
+          </section>
+          <section class="panel" style="margin-top:15px" aria-label="Configure storage locations">${sectionHeading("Configure Locations", "Add locations, set clothing capacity, or mark locations full")}
+            <form id="rack-add-form" class="rack-config-form">
+              <div class="field"><label for="new-location-name">Location name</label><input id="new-location-name" name="name" required maxlength="40" placeholder="e.g. Shelf 3"></div>
+              <div class="field"><label for="new-location-capacity">Clothing capacity</label><input id="new-location-capacity" name="capacity" type="number" min="1" max="100000" step="1" placeholder="Unlimited"></div>
+              <button class="primary-button" type="submit">Add location</button>
+            </form>
+            <div class="rack-config-list">${configRows || renderEmpty("No locations configured", "Add your first storage location above.")}</div>
+          </section>`;
+      };
+      const updateTrackingVisibility = () => {
+        const query = trackingSearch.trim().toLocaleLowerCase();
+        let visible = 0;
+        document.querySelectorAll("[data-tracking-row]").forEach((row) => {
+          const matches = !query || row.dataset.search.includes(query) || phoneMatches(row.dataset.phone, query);
+          row.hidden = !matches;
+          if (matches) visible += 1;
+        });
+        const count = document.getElementById("tracking-count");
+        if (count) count.textContent = `${visible} matching`;
+        const empty = document.querySelector("[data-tracking-empty]");
+        if (empty) empty.hidden = visible > 0;
+      };
+      const renderRackSearchResults = () => {
+        const result = document.getElementById("rack-search-result");
+        if (!result) return;
+        const query = rackSearch.trim();
+        const filtered = orders.filter((order) => {
+          if (searchQuery && !searchMatches(order)) return false;
+          if (!query) return false;
+          return [order.customerName, order.phone, order.id, order.storageLocation, order.rack]
+            .some((value) => String(value || "").toLocaleLowerCase().includes(query.toLocaleLowerCase()))
+            || phoneMatches(order.phone, query);
+        });
+        result.innerHTML = !query
+          ? "Enter a customer name, mobile number, or order number to find its physical location."
+          : filtered.length
+            ? filtered.map((order) => `<div><strong>${escapeHtml(order.customerName)}</strong> · <strong>#${escapeHtml(order.id)}</strong> · ${escapeHtml(order.quantity)} clothes · ${escapeHtml(stageLabels[order.stage] || order.stage)} · <strong>${escapeHtml(order.storageLocation || (order.rack ? `${order.rack} · historical` : "No location assigned"))}</strong></div>`).join("")
+            : `No customer or order found for “${escapeHtml(query)}”.`;
+        document.querySelectorAll("[data-rack-card]").forEach((card) => {
+          const cardQuery = query.toLocaleLowerCase();
+          card.hidden = Boolean(cardQuery) && !card.dataset.search.includes(cardQuery);
+        });
+        document.querySelectorAll("[data-rack-order-row]").forEach((row) => {
+          const rowQuery = query.toLocaleLowerCase();
+          row.hidden = Boolean(rowQuery) && !row.dataset.search.includes(rowQuery);
+        });
+        const visibleCards = [...document.querySelectorAll("[data-rack-card]")].some((card) => !card.hidden);
+        const visibleOrders = [...document.querySelectorAll("[data-rack-order-row]")].some((row) => !row.hidden);
+        const emptyCards = document.querySelector("[data-rack-empty]");
+        const emptyOrders = document.querySelector("[data-rack-order-empty]");
+        if (emptyCards) emptyCards.hidden = visibleCards;
+        if (emptyOrders) emptyOrders.hidden = visibleOrders;
+      };
+      const reportMarkup = () => {
+        const invalidRange = Boolean(reportFilters.from && reportFilters.to && reportFilters.from > reportFilters.to);
+        const inOrderRange = (order) => (!reportFilters.from || order.receivedDate >= reportFilters.from)
+          && (!reportFilters.to || order.receivedDate <= reportFilters.to);
+        const scopedOrders = invalidRange ? [] : orders.filter(inOrderRange);
+        const payments = invalidRange ? [] : paymentRecords(orders, reportFilters.from, reportFilters.to);
+        const collected = roundMoney(payments.reduce((sum, payment) => sum + payment.amount, 0));
+        const outstanding = roundMoney(scopedOrders.reduce((sum, order) => sum + dueBalance(order), 0));
+        const active = scopedOrders.filter((order) => order.stage !== "Delivered");
+        const overdue = active.filter((order) => order.deliveryDate < localDate());
+        const stageRows = stages.map((stage) => {
+          const count = scopedOrders.filter((order) => order.stage === stage).length;
+          return `<tr><td>${statusBadge(stage)}</td><td>${count}</td></tr>`;
+        }).join("");
+        const clothingTotals = new Map();
+        scopedOrders.forEach((order) => order.items.forEach((item) => {
+          const name = item.name.trim() || "Unspecified";
+          clothingTotals.set(name, (clothingTotals.get(name) || 0) + Number(item.quantity || 0));
+        }));
+        const clothingRows = [...clothingTotals.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .map(([name, quantity]) => `<tr><td>${escapeHtml(name)}</td><td>${quantity}</td></tr>`).join("");
+        const customerRows = customers.map((customer) => {
+          const allCustomerOrders = orders.filter((order) => order.customerId === customer.id);
+          const customerOrders = allCustomerOrders.filter(inOrderRange);
+          const customerPayments = paymentRecords(allCustomerOrders, reportFilters.from, reportFilters.to);
+          if (!customerOrders.length && !customerPayments.length) return "";
+          const customerPaid = roundMoney(customerPayments
+            .reduce((sum, payment) => sum + payment.amount, 0));
+          const customerDue = roundMoney(customerOrders.reduce((sum, order) => sum + dueBalance(order), 0));
+          const totalBilled = roundMoney(customerOrders.reduce((sum, order) => sum + Number(order.total || 0), 0));
+          return `<tr><td><span class="customer-name">${escapeHtml(customer.name)}</span><div class="subtext">${escapeHtml(customer.phone || "—")}</div></td><td>${customerOrders.length}</td><td>${formatMoney(totalBilled)}</td><td>${formatMoney(customerPaid)}</td><td><span class="${customerDue ? "payment-due" : "payment-clear"}">${formatMoney(customerDue)}</span></td><td><button class="text-action" type="button" data-action="customer" data-id="${escapeHtml(customer.id)}">Order &amp; payment history</button></td></tr>`;
+        }).join("");
+        const recentRows = scopedOrders.slice().sort((a, b) => b.receivedDate.localeCompare(a.receivedDate) || b.id.localeCompare(a.id))
+          .slice(0, 10);
+        const rangeLabel = reportFilters.from || reportFilters.to
+          ? `${reportFilters.from ? formatDate(reportFilters.from) : "Beginning"} – ${reportFilters.to ? formatDate(reportFilters.to) : "No end date"}`
+          : "All dates";
+        return `<div class="page-heading"><div><h1>Reports</h1><p class="page-subtitle">Business performance for ${escapeHtml(rangeLabel)}.</p></div><div class="report-page-actions"><button class="secondary-button" type="button" data-action="reset-demo">Reset Demo Data</button><button class="primary-button" type="button" data-action="new">New laundry order</button></div></div>
+          <section class="panel report-controls" aria-label="Report date range">
+            ${sectionHeading("Report period", "Orders are grouped by received date; collections are grouped by payment date. Outstanding is calculated for orders received in the selected period.", `<div class="report-export-actions"><button class="text-action" type="button" data-action="export-report-orders">Export orders CSV</button><button class="text-action" type="button" data-action="export-report-payments">Export payments CSV</button></div>`)}
+            <div class="report-date-fields"><div class="field"><label for="report-from">Received / payment date from</label><input id="report-from" type="date" value="${escapeHtml(reportFilters.from)}"></div><div class="field"><label for="report-to">Received / payment date to</label><input id="report-to" type="date" value="${escapeHtml(reportFilters.to)}"></div><button class="secondary-button" type="button" data-action="clear-report-dates">All dates</button></div>
+            ${invalidRange ? `<p class="form-error visible report-error" role="alert">The start date must be on or before the end date.</p>` : ""}
+          </section>
+          <div class="stats report-stats">${statCard("Orders in Range", String(scopedOrders.length), "Based on order received date", icons.bag)}${statCard("Revenue Collected", formatMoney(collected), "Payments dated within this period", icons.money)}${statCard("Outstanding Payments", formatMoney(outstanding), "Open balances on these orders", icons.money)}${statCard("Delivered", String(scopedOrders.filter((order) => order.stage === "Delivered").length), "Orders completed", icons.check)}${statCard("Active Orders", String(active.length), "Orders not yet delivered", icons.bag)}${statCard("Overdue Orders", String(overdue.length), "Active orders past expected delivery", icons.calendar)}</div>
+          <div class="reports-grid">
+            <section class="panel">${sectionHeading("Orders by Processing Stage", `${scopedOrders.length} orders in range`)}<div class="table-scroll"><table><thead><tr><th>Processing stage</th><th>Orders</th></tr></thead><tbody>${stageRows}</tbody></table></div></section>
+            <section class="panel">${sectionHeading("Clothes by Type", "Total pieces received in this period")}<div class="table-scroll"><table><thead><tr><th>Clothing type</th><th>Pieces</th></tr></thead><tbody>${clothingRows || `<tr><td colspan="2">${renderEmpty("No clothing data", "Orders in this date range will appear here.")}</td></tr>`}</tbody></table></div></section>
+          </div>
+          <section class="panel report-section">${sectionHeading("Customer Order &amp; Payment Summary", "Billed, collected in period, and outstanding per customer")}<div class="table-scroll"><table><thead><tr><th>Customer</th><th>Orders</th><th>Total billed</th><th>Collected in period</th><th>Outstanding</th><th>History</th></tr></thead><tbody>${customerRows || `<tr><td colspan="6">${renderEmpty("No customer history", "Customers with orders in this period will appear here.")}</td></tr>`}</tbody></table></div></section>
+          <section class="panel report-section">${sectionHeading("Recent Orders in Period", `${recentRows.length} of ${scopedOrders.length} orders`)}${ordersTable(recentRows)}</section>`;
+      };
+      const secondaryMarkup = (view) => {
+        if (view === "tracking") return trackingMarkup();
+        if (view === "racks") return rackMarkup();
+        const titleMap = { customers: "Customers", orders: "All Orders", tracking: "Laundry Tracking", racks: "Rack Management", payments: "Payments", reports: "Reports" };
+        const title = titleMap[view] || "Dashboard";
+        const subtitleMap = {
+          customers: "Search and review your customer history.",
+          orders: "Browse every laundry order and payment.",
+          tracking: "Track each order through the laundry workflow.",
+          racks: "See where active laundry is stored.",
+          payments: "Review outstanding order balances.",
+          reports: "A quick overview of shop activity and revenue."
+        };
+        let list = orders.filter(searchMatches);
+        let content = "";
+        let recordCount = list.length;
+        if (view === "customers") {
+          const matchingCustomers = customers.filter((customer) => !searchQuery
+            || customer.name.toLocaleLowerCase().includes(searchQuery)
+            || customer.phone.toLocaleLowerCase().includes(searchQuery)
+            || phoneMatches(customer.phone, searchQuery));
+          recordCount = matchingCustomers.length;
+          const rows = matchingCustomers.map((customer) => {
+            const customerOrders = getCustomerOrders(customer);
+            const billed = customerOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+            const balance = customerOrders.reduce((sum, order) => sum + dueBalance(order), 0);
+            return `<tr><td><span class="customer-name">${escapeHtml(customer.name)}</span></td><td>${escapeHtml(customer.phone || "—")}</td><td>${customerOrders.length}</td><td>${formatMoney(billed)}</td><td><span class="${balance ? "payment-due" : "payment-clear"}">${formatMoney(balance)}</span></td><td>${escapeHtml(formatDate(customer.registrationDate))}</td><td><button class="text-action" type="button" data-action="customer" data-id="${escapeHtml(customer.id)}">View history</button></td></tr>`;
+          }).join("");
+          content = `<div class="table-scroll"><table><thead><tr><th>Customer name</th><th>Mobile number</th><th>Orders</th><th>Total billed</th><th>Pending amount</th><th>Registered</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7">${renderEmpty("No customer found", "Search by full or partial name, Indian mobile number, or order number.")}</td></tr>`}</tbody></table></div>`;
+        } else if (view === "tracking") {
+          list = list.filter((order) => order.stage !== "Delivered");
+          content = ordersTable(list);
+        } else if (view === "racks") {
+          const locations = new Map();
+          list.filter((order) => order.stage !== "Delivered").forEach((order) => {
+            const rack = order.rack || "Not assigned";
+            if (!locations.has(rack)) locations.set(rack, []);
+            locations.get(rack).push(order);
+          });
+          const rows = [...locations.entries()].map(([rack, rackOrders]) => `<tr><td><span class="customer-name">${escapeHtml(rack)}</span></td><td>${rackOrders.length} order${rackOrders.length === 1 ? "" : "s"}</td><td>${rackOrders.reduce((sum, order) => sum + Number(order.quantity || 0), 0)} clothes</td><td>${rackOrders.map((order) => escapeHtml(order.customerName)).join(", ")}</td><td>${rackOrders.map((order) => statusBadge(order.stage)).join(" ")}</td></tr>`).join("");
+          content = `<div class="table-scroll"><table><thead><tr><th>Rack / location</th><th>Orders stored</th><th>Clothes</th><th>Customers</th><th>Workflow status</th></tr></thead><tbody>${rows || `<tr><td colspan="5">${renderEmpty("No rack assignments", "Active orders with a rack or location will appear here.")}</td></tr>`}</tbody></table></div>`;
+        } else if (view === "payments") {
+          list = list.filter((order) => !paymentFilter || paymentStatus(order) === paymentFilter);
+          recordCount = list.length;
+          const collected = orders.reduce((sum, order) => sum + orderPaid(order), 0);
+          const outstanding = orders.reduce((sum, order) => sum + dueBalance(order), 0);
+          const paymentRows = list.map((order) => `<tr>
+            <td><span class="order-number">#${escapeHtml(order.id)}</span><div class="subtext">${escapeHtml(formatDate(order.receivedDate))}</div></td>
+            <td><span class="customer-name">${escapeHtml(order.customerName)}</span><div class="subtext">${escapeHtml(order.phone || "—")}</div></td>
+            <td>${formatMoney(order.total)}</td>
+            <td>${formatMoney(orderPaid(order))}</td>
+            <td><span class="${dueBalance(order) ? "payment-due" : "payment-clear"}">${formatMoney(dueBalance(order))}</span></td>
+            <td>${paymentStatusBadge(order)}</td>
+            <td><details class="payment-row-details"><summary>History &amp; actions</summary><div class="payment-history">${paymentHistoryMarkup(order)}</div>${paymentSummary(order)}${paymentEntryForm(order)}<div class="payment-row-actions"><button class="text-action" type="button" data-action="detail" data-id="${escapeHtml(order.id)}">View order</button><button class="text-action" type="button" data-action="print-bill" data-id="${escapeHtml(order.id)}">Print Bill</button><button class="text-action" type="button" data-action="print-receipt" data-id="${escapeHtml(order.id)}">Print Receipt</button></div></details></td>
+          </tr>`).join("");
+          content = `<div class="stats payment-stats">${statCard("Total Collected", formatMoney(collected), "All advances and additional payments", icons.money)}${statCard("Total Outstanding", formatMoney(outstanding), "Unpaid balances across all orders", icons.money)}</div>
+            <div class="history-filters"><label for="payment-status-filter">Payment status</label><select id="payment-status-filter" aria-label="Filter by payment status"><option value="" ${paymentFilter === "" ? "selected" : ""}>All statuses</option><option value="Unpaid" ${paymentFilter === "Unpaid" ? "selected" : ""}>Unpaid</option><option value="Partial" ${paymentFilter === "Partial" ? "selected" : ""}>Partial</option><option value="Paid" ${paymentFilter === "Paid" ? "selected" : ""}>Paid</option></select></div>
+            <div class="payment-export-action"><button class="text-action" type="button" data-action="export-payments">Export payment records CSV</button></div>
+            <div class="table-scroll"><table><thead><tr><th>Order no.</th><th>Customer</th><th>Bill amount</th><th>Amount paid</th><th>Outstanding</th><th>Payment status</th><th>Payment records</th></tr></thead><tbody>${paymentRows || `<tr><td colspan="7">${renderEmpty(searchQuery || paymentFilter ? "No matching payments" : "No orders yet", searchQuery || paymentFilter ? "Try another search or payment status." : "Orders and their payment balances will appear here.")}</td></tr>`}</tbody></table></div>`;
+        } else if (view === "reports") {
+          return reportMarkup();
+        } else {
+          list = [...list].sort((a, b) => String(b.receivedDate).localeCompare(String(a.receivedDate)));
+          content = ordersTable(list);
+        }
+        const button = `<button class="primary-button" type="button" data-action="new"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>New laundry order</button>`;
+        return `<div class="page-heading"><div><h1>${escapeHtml(title)}</h1><p class="page-subtitle">${escapeHtml(subtitleMap[view] || "")}</p></div>${button}</div>${view === "reports" ? content : `<section class="panel">${sectionHeading(title, `${recordCount} ${recordCount === 1 ? "record" : "records"}${searchQuery ? " matching your search" : ""}`, view === "orders" ? '<button class="text-action" type="button" data-action="export">Export CSV</button>' : "")}${content}</section>`}`;
+      };
+      const matchingCustomers = (query) => {
+        const lower = query.toLocaleLowerCase();
+        return customers.filter((customer) => customer.name.toLocaleLowerCase().includes(lower)
+          || customer.phone.toLocaleLowerCase().includes(lower)
+          || phoneMatches(customer.phone, query));
+      };
+      const matchingOrders = (query) => {
+        const lower = query.toLocaleLowerCase().replace(/^#/, "");
+        return orders.filter((order) => String(order.id).toLocaleLowerCase().includes(lower)
+          || phoneMatches(order.phone, query));
+      };
+      const renderSearchResults = (query) => {
+        if (!query.trim()) {
+          searchResults.hidden = true;
+          searchResults.innerHTML = "";
+          return;
+        }
+        const foundCustomers = matchingCustomers(query).slice(0, 6);
+        const foundOrders = matchingOrders(query).slice(0, 8);
+        if (!foundCustomers.length && !foundOrders.length) {
+          searchResults.innerHTML = `<div class="search-empty">No customer or order found. Try a name, Indian mobile number, or bill number.</div>`;
+        } else {
+          const customerResults = foundCustomers.length ? `<div class="search-group-label">Customers</div>${foundCustomers.map((customer) => `<button class="search-result" type="button" role="option" data-action="search-customer" data-id="${escapeHtml(customer.id)}"><span class="search-result-icon">${icons.people}</span><span class="search-result-copy"><span class="search-result-title">${escapeHtml(customer.name)}</span><span class="search-result-meta">${escapeHtml(customer.phone || "No mobile number")} · ${getCustomerOrders(customer).length} orders</span></span></button>`).join("")}` : "";
+          const orderResults = foundOrders.length ? `<div class="search-group-label">Orders and bills</div>${foundOrders.map((order) => `<button class="search-result" type="button" role="option" data-action="search-order" data-id="${escapeHtml(order.id)}"><span class="search-result-icon">${icons.bag}</span><span class="search-result-copy"><span class="search-result-title">#${escapeHtml(order.id)} · ${escapeHtml(order.customerName)}</span><span class="search-result-meta">${escapeHtml(order.phone || "No mobile number")} · ${escapeHtml(formatDate(order.receivedDate))} · ${escapeHtml(stageLabels[order.stage] || order.stage)}</span></span></button>`).join("")}` : "";
+          searchResults.innerHTML = customerResults + orderResults;
+        }
+        searchResults.hidden = false;
+      };
+      const render = () => {
+        if (currentView === "new-order") {
+          pageContent.innerHTML = newOrderMarkup();
+          renderItemEditor("page-item-editor", [{ name: "", quantity: 1, service: services[0], unitPrice: 0 }]);
+          const customer = customers.find((item) => item.id === selectedOrderCustomerId);
+          if (customer) setSelectedOrderCustomer(customer);
+          updatePageOrderTotals();
+        } else if (currentView === "customer-profile") {
+          const customer = customers.find((item) => item.id === selectedCustomerId);
+          pageContent.innerHTML = customerProfileMarkup(customer);
+        } else if (currentView === "order-detail") {
+          pageContent.innerHTML = orderDetailMarkup(orders.find((item) => item.id === currentOrderId));
+        } else {
+          pageContent.innerHTML = currentView === "dashboard" ? dashboardMarkup() : secondaryMarkup(currentView);
+        }
+        if (feedbackMessage) {
+          pageContent.insertAdjacentHTML("afterbegin", `<div class="feedback-banner" role="status">${escapeHtml(feedbackMessage)}</div>`);
+        }
+        if (currentView === "tracking") updateTrackingVisibility();
+        if (currentView === "racks") renderRackSearchResults();
+        document.querySelectorAll(".nav-link").forEach((link) => {
+          const activeView = currentView === "customer-profile" ? "customers" : currentView === "order-detail" ? "orders" : currentView;
+          link.classList.toggle("active", link.dataset.view === activeView);
+          if (link.dataset.view === activeView) link.setAttribute("aria-current", "page");
+          else link.removeAttribute("aria-current");
+        });
+      };
+      const renderCustomerPicker = (query = "") => {
+        const results = document.getElementById("customer-picker-results");
+        if (!results) return;
+        const trimmed = query.trim();
+        const matches = trimmed ? customers.filter((customer) =>
+          customer.name.toLocaleLowerCase().includes(trimmed.toLocaleLowerCase())
+          || customer.phone.includes(trimmed)
+          || phoneMatches(customer.phone, trimmed)
+        ).slice(0, 7) : [];
+        if (!matches.length) {
+          results.innerHTML = trimmed ? `<div class="search-empty">No existing customer found. Register a new customer below.</div>` : "";
+          results.hidden = !trimmed;
+          return;
+        }
+        results.innerHTML = matches.map((customer) => `<button class="customer-choice" type="button" role="option" data-action="select-order-customer" data-id="${escapeHtml(customer.id)}"><div class="customer-choice-name">${escapeHtml(customer.name)}</div><div class="customer-choice-meta">${escapeHtml(customer.phone || "No mobile number")} · ${getCustomerOrders(customer).length} orders</div></button>`).join("");
+        results.hidden = false;
+      };
+      const setSelectedOrderCustomer = (customer) => {
+        selectedOrderCustomerId = customer ? customer.id : "";
+        const holder = document.getElementById("selected-customer");
+        const hiddenId = document.getElementById("order-customer-id");
+        if (!holder || !hiddenId) return;
+        hiddenId.value = selectedOrderCustomerId;
+        holder.hidden = !customer;
+        document.getElementById("selected-customer-name").textContent = customer ? customer.name : "";
+        document.getElementById("selected-customer-meta").textContent = customer ? `${customer.phone || "No mobile number"} · Customer ID ${customer.id}` : "";
+        if (customer) {
+          document.getElementById("order-customer-search").value = "";
+          document.getElementById("customer-picker-results").hidden = true;
+          document.getElementById("new-customer-fields").hidden = true;
+        }
+        document.getElementById("order-new-customer-name").required = false;
+        document.getElementById("order-new-customer-phone").required = false;
+      };
+      const renderItemEditor = (editorId, items = []) => {
+        const editor = document.getElementById(editorId);
+        if (!editor) return;
+        const rows = items.length ? items : [{ name: "", quantity: "", service: services[0], unitPrice: 0 }];
+        if (editorId === "page-item-editor") {
+          editor.innerHTML = rows.map((item, index) => `<tr class="page-item-row">
+            <td><input type="text" data-item-name maxlength="60" aria-label="Clothing type ${index + 1}" placeholder="e.g. Shirt" value="${escapeHtml(item.name || "")}" required></td>
+            <td><input class="item-qty" type="number" data-item-quantity min="1" max="10000" step="1" aria-label="Quantity ${index + 1}" value="${escapeHtml(item.quantity ?? 1)}" required></td>
+            <td><select data-item-service aria-label="Service ${index + 1}">${services.map((service) => `<option value="${escapeHtml(service)}" ${item.service === service ? "selected" : ""}>${escapeHtml(service)}</option>`).join("")}</select></td>
+            <td><input type="number" data-item-price min="0" max="999999" step="0.01" aria-label="Price per item ${index + 1}" value="${escapeHtml(item.unitPrice ?? 0)}" required></td>
+            <td><span class="item-line-total" data-line-total>${formatMoney(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</span></td>
+            <td><button class="remove-item" type="button" data-remove-item aria-label="Remove clothing row ${index + 1}" ${rows.length === 1 ? "disabled" : ""}>&times;</button></td>
+          </tr>`).join("");
+        } else {
+          editor.innerHTML = rows.map((item, index) => `<div class="item-editor-row">
+            <input type="text" data-item-name maxlength="60" aria-label="Clothing item ${index + 1} name" placeholder="e.g. Shirt" value="${escapeHtml(item.name || "")}" required>
+            <input type="number" data-item-quantity min="1" max="10000" step="1" aria-label="Clothing item ${index + 1} quantity" placeholder="Qty" value="${escapeHtml(item.quantity ?? "")}" required>
+            <select data-item-service aria-label="Clothing item ${index + 1} service">${services.map((service) => `<option value="${escapeHtml(service)}" ${item.service === service ? "selected" : ""}>${escapeHtml(service)}</option>`).join("")}</select>
+            <input type="number" data-item-price min="0" max="999999" step="0.01" aria-label="Price per item ${index + 1}" placeholder="Price" value="${escapeHtml(item.unitPrice ?? 0)}" required>
+            <span class="item-line-total" data-line-total>${formatMoney(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</span>
+            <button class="remove-item" type="button" data-remove-item aria-label="Remove clothing item ${index + 1}" ${rows.length === 1 ? "disabled" : ""}>&times;</button>
+          </div>`).join("");
+        }
+        updateItemTotal(editorId);
+      };
+      const readItemEditor = (editorId) => [...document.querySelectorAll(`#${editorId} [data-item-name]`)].map((input) => {
+        const row = input.closest("tr, .item-editor-row");
+        const quantity = Number(row.querySelector("[data-item-quantity]").value);
+        const unitPrice = Number(row.querySelector("[data-item-price]").value);
+        return {
+          name: input.value.trim(),
+          quantity,
+          service: row.querySelector("[data-item-service]").value,
+          unitPrice,
+          lineTotal: roundMoney(quantity * unitPrice)
+        };
+      });
+      const updateItemTotal = (editorId) => {
+        const editor = document.getElementById(editorId);
+        if (!editor) return;
+        let quantity = 0;
+        editor.querySelectorAll("tr, .item-editor-row").forEach((row) => {
+          const count = Number(row.querySelector("[data-item-quantity]").value) || 0;
+          const price = Number(row.querySelector("[data-item-price]").value) || 0;
+          quantity += count;
+          row.querySelector("[data-line-total]").textContent = formatMoney(roundMoney(count * price));
+        });
+        const total = document.getElementById(editorId === "page-item-editor" ? "page-item-total" : "item-total");
+        if (total) total.textContent = `${quantity} ${quantity === 1 ? "clothing item" : "clothing items"}`;
+        if (editorId === "page-item-editor") updatePageOrderTotals();
+      };
+      const updatePageOrderTotals = () => {
+        const editor = document.getElementById("page-item-editor");
+        if (!editor) return;
+        const items = readItemEditor("page-item-editor");
+        const quantity = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+        const subtotal = roundMoney(items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0), 0));
+        const discountInput = document.getElementById("page-discount");
+        const taxInput = document.getElementById("page-tax-percent");
+        const discount = Math.max(0, Number(discountInput && discountInput.value) || 0);
+        const taxPercent = Math.max(0, Number(taxInput && taxInput.value) || 0);
+        const taxable = Math.max(0, subtotal - discount);
+        const tax = roundMoney(taxable * taxPercent / 100);
+        const total = roundMoney(taxable + tax);
+        const advance = Math.max(0, Number(document.getElementById("page-advance") && document.getElementById("page-advance").value) || 0);
+        document.getElementById("page-total-quantity").textContent = `${quantity} clothes`;
+        document.getElementById("page-subtotal").textContent = formatMoney(subtotal);
+        document.getElementById("page-tax").textContent = formatMoney(tax);
+        document.getElementById("page-final-bill").textContent = formatMoney(total);
+        document.getElementById("page-outstanding").textContent = formatMoney(Math.max(0, total - advance));
+        const advanceInput = document.getElementById("page-advance");
+        if (advanceInput) advanceInput.max = String(total);
+      };
+      const setFormValue = (name, value) => { form.elements.namedItem(name).value = value; };
+      const openModal = (order = null, customer = null) => {
+        if (!storageAvailable) {
+          window.alert("Saved order storage is currently unavailable. Your changes cannot be saved.");
+          return;
+        }
+        form.reset();
+        errorBox.textContent = "";
+        errorBox.classList.remove("visible");
+        editingId = order ? order.id : null;
+        document.getElementById("dialog-title").textContent = order ? `Edit order #${order.id}` : "New laundry order";
+        document.getElementById("delete-order").hidden = !order;
+        setFormValue("receivedDate", order ? order.receivedDate : localDate());
+        setFormValue("deliveryDate", order ? order.deliveryDate : localDate());
+        setFormValue("actualDeliveryDate", order ? order.actualDeliveryDate : "");
+        renderItemEditor("item-editor", order ? order.items : [{ name: "", quantity: "", service: services[0], unitPrice: 0 }]);
+        if (order) ["customerName", "phone", "stage", "rack", "total", "receivedDate", "deliveryDate", "actualDeliveryDate", "notes"].forEach((name) => setFormValue(name, order[name] ?? ""));
+        setFormValue("paid", order ? order.advance : 0);
+        if (customer && !order) {
+          setFormValue("customerName", customer.name);
+          setFormValue("phone", customer.phone);
+        }
+        modal.hidden = false;
+        form.elements.namedItem("customerName").focus();
+      };
+      const closeModal = () => { modal.hidden = true; editingId = null; };
+      const showCustomer = (customerId) => {
+        if (!customers.some((customer) => customer.id === customerId)) {
+          pageContent.innerHTML = `<div class="page-heading"><div><h1>Customer not found</h1><p class="page-subtitle">This customer could not be located in the saved records.</p></div><button class="secondary-button" type="button" data-action="back">Back to dashboard</button></div>${renderEmpty("No customer found", "Search again by name, mobile number, or bill number.")}`;
+          currentView = "customer-profile";
+          selectedCustomerId = customerId;
+          render();
+          return;
+        }
+        selectedCustomerId = customerId;
+        currentOrderId = null;
+        historyFilters = { status: "", from: "", to: "" };
+        currentView = "customer-profile";
+        globalSearch.value = "";
+        searchQuery = "";
+        searchResults.hidden = true;
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      const showOrder = (orderId) => {
+        const order = orders.find((item) => item.id === orderId);
+        if (!order) {
+          currentOrderId = orderId;
+          currentView = "order-detail";
+          render();
+          return;
+        }
+        currentOrderId = order.id;
+        selectedCustomerId = order.customerId;
+        currentView = "order-detail";
+        globalSearch.value = "";
+        searchQuery = "";
+        searchResults.hidden = true;
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      const goToView = (view, customerId = "") => {
+        feedbackMessage = "";
+        selectedCustomerId = null;
+        currentOrderId = null;
+        if (view === "new-order") {
+          lastCreatedOrderId = "";
+          selectedOrderCustomerId = customerId;
+        }
+        currentView = view;
+        render();
+        closeSidebar();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      const closeSidebar = () => {
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("mobile-scrim").classList.remove("visible");
+        document.getElementById("mobile-menu").setAttribute("aria-expanded", "false");
+      };
+      const resetDemoData = () => {
+        if (!window.confirm("Reset all saved customers, orders, payments, and rack assignments to the original demo data? This cannot be undone.")) return;
+        const previousOrders = JSON.stringify(orders);
+        const previousCustomers = JSON.stringify(customers);
+        const previousLocations = JSON.stringify(storageLocations);
+        orders = sampleOrders().map(normalizeOrder);
+        customers = [];
+        reconcileCustomers();
+        storageLocations = normalizeStorageLocations(defaultStorageLocations());
+        if (!saveOrders()) {
+          orders = JSON.parse(previousOrders);
+          customers = JSON.parse(previousCustomers);
+          storageLocations = JSON.parse(previousLocations);
+          return;
+        }
+        reportFilters = { from: "", to: "" };
+        paymentFilter = "";
+        searchQuery = "";
+        globalSearch.value = "";
+        feedbackMessage = `Demo data restored: ${orders.length} orders and ${customers.length} customers.`;
+        renderSearchResults("");
+        render();
+      };
+      const exportOrders = (list = orders) => {
+        const columns = ["Order number", "Customer", "Mobile number", "Total clothes", "Items and services", "Order status", "Rack/location", "Total bill", "Advance paid", "Additional payments", "Pending amount", "Date received", "Expected delivery", "Actual delivery", "Notes"];
+        const rows = list.map((order) => [order.id, order.customerName, order.phone, order.quantity, order.items.map((item) => `${item.name} x ${item.quantity} (${item.service})`).join("; "), order.stage, order.rack, order.total, order.advance, orderPaymentsTotal(order), dueBalance(order), order.receivedDate, order.deliveryDate, order.actualDeliveryDate, order.notes]);
+        downloadCsv(`freshwash-orders-${localDate()}.csv`, columns, rows);
+      };
+      const csvCell = (value) => {
+        const text = String(value ?? "");
+        const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+        return `"${safeText.replace(/"/g, '""')}"`;
+      };
+      const downloadCsv = (filename, columns, rows) => {
+        if (!rows.length) {
+          window.alert("There are no records in the current selection to export.");
+          return;
+        }
+        const csv = [columns, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+        const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+      const paymentRecords = (list, from = "", to = "") => list.flatMap((order) => [
+        ...(Number(order.advance) > 0 ? [{
+          order,
+          date: order.receivedDate,
+          amount: Number(order.advance),
+          method: order.paymentMethod || "Cash",
+          reference: "",
+          type: "Advance"
+        }] : []),
+        ...order.payments.map((payment) => ({
+          order,
+          date: payment.date,
+          amount: Number(payment.amount),
+          method: payment.method || "Cash",
+          reference: payment.reference || "",
+          type: "Additional payment"
+        }))
+      ]).filter((payment) => (!from || payment.date >= from) && (!to || payment.date <= to));
+      const exportPayments = (list = orders, from = "", to = "") => {
+        const rows = paymentRecords(list, from, to).map((payment) => [
+          payment.order.id, payment.order.customerName, payment.order.phone, payment.type,
+          payment.date, payment.amount, payment.method, payment.reference
+        ]);
+        downloadCsv(`freshwash-payments-${localDate()}.csv`,
+          ["Order number", "Customer", "Mobile number", "Payment type", "Payment date", "Amount", "Method", "Transaction reference"],
+          rows);
+      };
+      const printBill = (order, format = "bill") => {
+        if (!order) return;
+        const customer = customers.find((item) => item.id === order.customerId);
+        const isReceipt = format === "receipt";
+        const documentTitle = isReceipt ? `Receipt ${order.receiptNumber}` : `Bill ${order.id}`;
+        const itemRows = order.items.map((item) => `<tr><td>${escapeHtml(item.name)}<small>${escapeHtml(item.service)}</small></td><td>${escapeHtml(item.quantity)}</td><td>${formatMoney(item.unitPrice)}</td><td>${formatMoney(item.lineTotal)}</td></tr>`).join("");
+        const paymentRows = [
+          ...(Number(order.advance) > 0 ? [`<tr><td>Advance</td><td>${escapeHtml(formatDate(order.receivedDate))}</td><td>${escapeHtml(order.paymentMethod || "Cash")}</td><td>${formatMoney(order.advance)}</td><td>—</td></tr>`] : []),
+          ...order.payments.map((payment) => `<tr><td>Additional payment</td><td>${escapeHtml(formatDate(payment.date))}</td><td>${escapeHtml(payment.method || "Cash")}</td><td>${formatMoney(payment.amount)}</td><td>${escapeHtml(payment.reference || "—")}</td></tr>`)
+        ].join("") || `<tr><td colspan="5">No payments recorded</td></tr>`;
+        const printable = window.open("", "_blank");
+        if (!printable) {
+          window.alert("The document could not open. Allow pop-ups for this app, then try printing again.");
+          return;
+        }
+        printable.opener = null;
+        printable.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(documentTitle)}</title><style>
+          @page{size:${isReceipt ? "80mm 200mm" : "A4"};margin:${isReceipt ? "5mm" : "15mm"}}
+          *{box-sizing:border-box}body{width:${isReceipt ? "70mm" : "100%"};max-width:${isReceipt ? "70mm" : "180mm"};margin:0 auto;color:#202738;font:12px/1.45 Arial,sans-serif;overflow-wrap:anywhere}
+          header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:2px solid #3478f6;padding-bottom:12px}
+          h1{margin:0 0 3px;font-size:${isReceipt ? "18px" : "24px"}}h2{margin:19px 0 8px;font-size:14px}
+          .muted,small{display:block;color:#6f7b8e;font-size:10px}.business-contact{margin-top:5px;color:#6f7b8e;font-size:10px}
+          .details{display:grid;grid-template-columns:${isReceipt ? "1fr" : "1fr 1fr"};gap:7px;margin:14px 0;font-size:10px}
+          table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:${isReceipt ? "9px" : "10px"}}
+          th,td{padding:${isReceipt ? "5px 3px" : "7px 5px"};border-bottom:1px solid #e6e9ef;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+          th{background:#f4f6fa}th:first-child{width:${isReceipt ? "36%" : "31%"}}.totals{width:${isReceipt ? "100%" : "min(100%,320px)"};margin:12px 0 0 auto}
+          .totals td:first-child{width:65%}.totals td:last-child{text-align:right}.final{font-size:14px;font-weight:bold;color:#2464df}
+          .notes{margin-top:14px;white-space:pre-wrap;font-size:10px}.thanks{margin-top:20px;padding-top:10px;border-top:1px dashed #aab3c2;color:#40516b;text-align:center;font-size:11px}
+          @media screen{body{margin:18px auto}}@media print{body{margin:0;width:${isReceipt ? "70mm" : "100%"};max-width:100%}tr{break-inside:avoid}}
+        </style></head><body><header><div><h1>FreshWash Laundry</h1><div class="muted">${isReceipt ? "Payment receipt" : "Laundry service bill"}</div><div class="business-contact">Address: [Business address]<br>Mobile: [Business mobile]</div></div><div><strong>Order #${escapeHtml(order.id)}</strong><div class="muted">Receipt #${escapeHtml(order.receiptNumber)}</div><div class="muted">Received ${escapeHtml(formatDate(order.receivedDate))}</div></div></header>
+          <div class="details"><div><strong>Customer:</strong> ${escapeHtml(customer ? customer.name : order.customerName)}</div><div><strong>Mobile:</strong> ${escapeHtml(customer ? customer.phone : order.phone || "—")}</div><div><strong>Address:</strong> ${escapeHtml(customer ? customer.address || "—" : order.address || "—")}</div><div><strong>Expected delivery:</strong> ${escapeHtml(formatDate(order.deliveryDate))}</div><div><strong>Actual delivery:</strong> ${escapeHtml(formatDate(order.actualDeliveryDate))}</div></div>
+          <h2>Clothing &amp; Services</h2><table><thead><tr><th>Item / service</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>${itemRows}</tbody></table>
+          <table class="totals"><tbody><tr><td>Subtotal</td><td>${formatMoney(order.subtotal)}</td></tr><tr><td>Discount</td><td>− ${formatMoney(order.discount)}</td></tr><tr><td>Tax (${escapeHtml(order.taxPercent)}%)</td><td>${formatMoney(order.taxAmount)}</td></tr><tr class="final"><td>Final bill</td><td>${formatMoney(order.total)}</td></tr><tr><td>Advance paid</td><td>${formatMoney(order.advance)}</td></tr><tr><td>Additional payments</td><td>${formatMoney(orderPaymentsTotal(order))}</td></tr><tr><td>Total paid</td><td>${formatMoney(orderPaid(order))}</td></tr><tr><td>Outstanding balance</td><td>${formatMoney(dueBalance(order))}</td></tr></tbody></table>
+          <h2>Payment history</h2><table><thead><tr><th>Type</th><th>Date</th><th>Method</th><th>Amount</th><th>Reference</th></tr></thead><tbody>${paymentRows}</tbody></table>
+          ${order.notes ? `<div class="notes"><strong>Customer notes:</strong> ${escapeHtml(order.notes)}</div>` : ""}${order.washingInstructions ? `<div class="notes"><strong>Washing instructions:</strong> ${escapeHtml(order.washingInstructions)}</div>` : ""}
+          <div class="thanks">Thank you for choosing FreshWash Laundry!</div></body></html>`);
+        printable.document.close();
+        window.setTimeout(() => printable.print(), 300);
+      };
+
+      document.getElementById("today-date").textContent = new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(new Date());
+      globalSearch.addEventListener("input", (event) => {
+        searchQuery = event.target.value.trim().toLocaleLowerCase();
+        renderSearchResults(event.target.value.trim());
+        if (searchQuery && !["customer-profile", "order-detail"].includes(currentView)) {
+          if (currentView === "dashboard") currentView = "orders";
+          render();
+        } else if (currentView === "customers" || currentView === "orders" || currentView === "tracking" || currentView === "payments" || currentView === "racks") {
+          render();
+        }
+      });
+      globalSearch.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") { searchResults.hidden = true; return; }
+        if (event.key !== "Enter") return;
+        const firstResult = searchResults.querySelector("button[data-action]");
+        if (firstResult) { event.preventDefault(); firstResult.click(); }
+      });
+      searchResults.addEventListener("click", (event) => {
+        const result = event.target.closest("button[data-action]");
+        if (!result) return;
+        if (result.dataset.action === "search-customer") showCustomer(result.dataset.id);
+        if (result.dataset.action === "search-order") showOrder(result.dataset.id);
+      });
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".global-search")) searchResults.hidden = true;
+      });
+      document.querySelector(".nav-list").addEventListener("click", (event) => {
+        const link = event.target.closest("button[data-view]");
+        if (link) goToView(link.dataset.view);
+      });
+      pageContent.addEventListener("click", (event) => {
+        const nav = event.target.closest("[data-nav]");
+        if (nav) { goToView(nav.dataset.nav); return; }
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        if (button.dataset.action === "new") { goToView("new-order"); return; }
+        if (button.dataset.action === "new-customer-order") {
+          const customer = customers.find((item) => item.id === button.dataset.id);
+          goToView("new-order", customer ? customer.id : "");
+          return;
+        }
+        if (button.dataset.action === "select-order-customer") {
+          const customer = customers.find((item) => item.id === button.dataset.id);
+          if (customer) setSelectedOrderCustomer(customer);
+          return;
+        }
+        if (button.dataset.action === "clear-customer") {
+          setSelectedOrderCustomer(null);
+          document.getElementById("order-customer-search").focus();
+          return;
+        }
+        if (button.dataset.action === "show-new-customer") {
+          document.getElementById("new-customer-fields").hidden = false;
+          setSelectedOrderCustomer(null);
+          document.getElementById("order-new-customer-name").required = true;
+          document.getElementById("order-new-customer-phone").required = true;
+          document.getElementById("order-new-customer-name").focus();
+          return;
+        }
+        if (button.dataset.action === "add-page-item") {
+          const items = readItemEditor("page-item-editor");
+          items.push({ name: "", quantity: 1, service: services[0], unitPrice: 0 });
+          renderItemEditor("page-item-editor", items);
+          const inputs = document.querySelectorAll("#page-item-editor [data-item-name]");
+          inputs[inputs.length - 1].focus();
+          return;
+        }
+        if (button.dataset.action === "new-order-reset") {
+          lastCreatedOrderId = "";
+          selectedOrderCustomerId = "";
+          render();
+          return;
+        }
+        if (button.dataset.action === "print-bill") {
+          printBill(orders.find((item) => item.id === button.dataset.id));
+          return;
+        }
+        if (button.dataset.action === "print-receipt") {
+          printBill(orders.find((item) => item.id === button.dataset.id), "receipt");
+          return;
+        }
+        if (button.dataset.action === "export") { exportOrders(orders.filter(searchMatches)); return; }
+        if (button.dataset.action === "export-payments") { exportPayments(); return; }
+        if (button.dataset.action === "export-report-orders") {
+          const rangeIsValid = !reportFilters.from || !reportFilters.to || reportFilters.from <= reportFilters.to;
+          if (!rangeIsValid) { window.alert("Correct the report date range before exporting."); return; }
+          exportOrders(orders.filter((order) => (!reportFilters.from || order.receivedDate >= reportFilters.from)
+            && (!reportFilters.to || order.receivedDate <= reportFilters.to)));
+          return;
+        }
+        if (button.dataset.action === "export-report-payments") {
+          const rangeIsValid = !reportFilters.from || !reportFilters.to || reportFilters.from <= reportFilters.to;
+          if (!rangeIsValid) { window.alert("Correct the report date range before exporting."); return; }
+          exportPayments(orders, reportFilters.from, reportFilters.to);
+          return;
+        }
+        if (button.dataset.action === "reset-demo") { resetDemoData(); return; }
+        if (button.dataset.action === "clear-report-dates") {
+          reportFilters = { from: "", to: "" };
+          render();
+          return;
+        }
+        if (button.dataset.action === "search-customer" || button.dataset.action === "customer") { showCustomer(button.dataset.id); return; }
+        if (button.dataset.action === "search-order" || button.dataset.action === "detail") { showOrder(button.dataset.id); return; }
+        if (button.dataset.action === "customer-list") { goToView("customers"); return; }
+        if (button.dataset.action === "back") { goToView("dashboard"); return; }
+        if (button.dataset.action === "clear-filters") {
+          historyFilters = { status: "", from: "", to: "" };
+          render();
+          return;
+        }
+        if (button.dataset.action === "clear-tracking-filters") {
+          trackingFilters = { stage: "", overdue: false };
+          trackingSearch = "";
+          render();
+          return;
+        }
+        if (button.dataset.action === "save-stage") {
+          const order = orders.find((item) => item.id === button.dataset.id);
+          const select = pageContent.querySelector(`[data-stage-select="${CSS.escape(button.dataset.id)}"]`);
+          if (!order || !select || !stages.includes(select.value)) return;
+          const previousOrders = JSON.stringify(orders);
+          const previousLocations = JSON.stringify(storageLocations);
+          transitionOrderStage(order, select.value);
+          storageLocations = normalizeStorageLocations(storageLocations);
+          if (!saveOrders()) {
+            orders = JSON.parse(previousOrders);
+            storageLocations = JSON.parse(previousLocations);
+            return;
+          }
+          feedbackMessage = `Order #${order.id} moved to ${stageLabels[order.stage] || order.stage}.`;
+          render();
+          renderSearchResults(globalSearch.value.trim());
+          return;
+        }
+        if (button.dataset.action === "save-location") {
+          const row = button.closest("[data-location-row]");
+          if (!row) return;
+          const oldName = row.dataset.locationRow;
+          const name = String(new FormData(row).get("name") || "").trim();
+          const rawCapacity = String(new FormData(row).get("capacity") || "").trim();
+          const capacity = rawCapacity ? Number(rawCapacity) : null;
+          if (!name || (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000))) {
+            window.alert("Enter a location name and a whole-number capacity from 1 to 100,000, or leave capacity blank for unlimited.");
+            return;
+          }
+          if (storageLocations.some((location) => location.name.toLocaleLowerCase() === name.toLocaleLowerCase() && location.name.toLocaleLowerCase() !== oldName.toLocaleLowerCase())) {
+            window.alert("A storage location with that name already exists.");
+            return;
+          }
+          const previousOrders = JSON.stringify(orders);
+          const previousLocations = JSON.stringify(storageLocations);
+          const location = storageLocations.find((item) => item.name === oldName);
+          if (!location) return;
+          location.name = name;
+          location.capacity = capacity;
+          location.isFull = new FormData(row).has("isFull");
+          orders.forEach((order) => {
+            if (order.rack === oldName) order.rack = name;
+            if (order.storageLocation === oldName) order.storageLocation = name;
+          });
+          storageLocations = normalizeStorageLocations(storageLocations);
+          if (!saveOrders()) {
+            orders = JSON.parse(previousOrders);
+            storageLocations = JSON.parse(previousLocations);
+            return;
+          }
+          feedbackMessage = `Storage location “${name}” was updated.`;
+          render();
+          return;
+        }
+        if (button.dataset.action === "delete-location") {
+          const name = button.dataset.id;
+          if (locationOrders(name).length) {
+            window.alert("Move active orders to another location before removing this one.");
+            return;
+          }
+          if (!window.confirm(`Remove storage location “${name}”?`)) return;
+          const previousLocations = JSON.stringify(storageLocations);
+          storageLocations = storageLocations.filter((location) => location.name !== name);
+          if (!saveOrders()) {
+            storageLocations = JSON.parse(previousLocations);
+            return;
+          }
+          feedbackMessage = `Storage location “${name}” was removed.`;
+          render();
+          return;
+        }
+        if (button.dataset.action === "edit") {
+          const order = orders.find((item) => item.id === button.dataset.id);
+          if (order) openModal(order);
+        }
+      });
+      pageContent.addEventListener("change", (event) => {
+        if (event.target.id === "report-from") {
+          reportFilters.from = event.target.value;
+          render();
+          return;
+        }
+        if (event.target.id === "report-to") {
+          reportFilters.to = event.target.value;
+          render();
+          return;
+        }
+        if (event.target.id === "payment-status-filter") {
+          paymentFilter = event.target.value;
+          render();
+          return;
+        }
+        if (event.target.id === "history-status") historyFilters.status = event.target.value;
+        if (event.target.id === "history-from") historyFilters.from = event.target.value;
+        if (event.target.id === "history-to") historyFilters.to = event.target.value;
+        if (event.target.id.startsWith("history-")) render();
+        if (event.target.id === "tracking-stage-filter") {
+          trackingFilters.stage = event.target.value;
+          render();
+        }
+        if (event.target.id === "tracking-overdue-filter") {
+          trackingFilters.overdue = event.target.checked;
+          render();
+        }
+        if (event.target.id === "page-tax-percent" || event.target.id === "page-discount" || event.target.id === "page-advance") updatePageOrderTotals();
+        if (event.target.matches("#page-item-editor [data-item-quantity], #page-item-editor [data-item-price]")) updateItemTotal("page-item-editor");
+      });
+      pageContent.addEventListener("input", (event) => {
+        if (event.target.matches("#page-item-editor [data-item-quantity], #page-item-editor [data-item-price]")) updateItemTotal("page-item-editor");
+        if (event.target.matches("#page-discount, #page-tax-percent, #page-advance")) updatePageOrderTotals();
+        if (event.target.id === "order-customer-search") renderCustomerPicker(event.target.value);
+        if (event.target.id === "tracking-search") {
+          trackingSearch = event.target.value;
+          updateTrackingVisibility();
+        }
+        if (event.target.id === "rack-search") {
+          rackSearch = event.target.value;
+          renderRackSearchResults();
+        }
+      });
+      document.getElementById("item-editor").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-item]");
+        if (!button) return;
+        const items = readItemEditor("item-editor");
+        if (items.length <= 1) return;
+        items.splice([...document.querySelectorAll("#item-editor .item-editor-row")].indexOf(button.closest(".item-editor-row")), 1);
+        renderItemEditor("item-editor", items);
+      });
+      document.getElementById("add-item").addEventListener("click", () => {
+        const items = readItemEditor("item-editor");
+        items.push({ name: "", quantity: "", service: services[0], unitPrice: 0 });
+        renderItemEditor("item-editor", items);
+      });
+      document.getElementById("item-editor").addEventListener("input", (event) => {
+        if (event.target.matches("[data-item-quantity], [data-item-price]")) updateItemTotal("item-editor");
+      });
+      pageContent.addEventListener("click", (event) => {
+        const button = event.target.closest("#page-item-editor [data-remove-item]");
+        if (!button) return;
+        const items = readItemEditor("page-item-editor");
+        if (items.length <= 1) return;
+        items.splice([...document.querySelectorAll("#page-item-editor .page-item-row")].indexOf(button.closest(".page-item-row")), 1);
+        renderItemEditor("page-item-editor", items);
+      });
+      pageContent.addEventListener("submit", (event) => {
+        const orderForm = event.target.closest("#page-order-form");
+        if (!orderForm) return;
+        event.preventDefault();
+        const error = document.getElementById("page-order-error");
+        error.textContent = "";
+        error.classList.remove("visible");
+        if (!storageAvailable) {
+          error.textContent = "Order storage is unavailable, so this order cannot be saved.";
+          error.classList.add("visible");
+          return;
+        }
+        const data = new FormData(orderForm);
+        const items = readItemEditor("page-item-editor");
+        const subtotal = roundMoney(items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0));
+        const discount = Number(data.get("discount") || 0);
+        const taxPercent = Number(data.get("taxPercent") || 0);
+        const taxable = Math.max(0, subtotal - discount);
+        const taxAmount = roundMoney(taxable * taxPercent / 100);
+        const total = roundMoney(taxable + taxAmount);
+        const advance = Number(data.get("advance") || 0);
+        const receivedDate = String(data.get("receivedDate") || "");
+        const deliveryDate = String(data.get("deliveryDate") || "");
+        const stage = String(data.get("stage") || "");
+        const newCustomerFields = document.getElementById("new-customer-fields");
+        const registeringNew = newCustomerFields && !newCustomerFields.hidden;
+        const customerId = String(data.get("customerId") || "");
+        if (!items.length || items.some((item) => !item.name || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10000 || !Number.isFinite(item.unitPrice) || item.unitPrice < 0 || item.unitPrice > 999999 || !services.includes(item.service))) {
+          error.textContent = "Add at least one clothing item with a type, quantity from 1 to 10,000, valid service, and price from ₹0 to ₹999,999.";
+        } else if (!Number.isFinite(subtotal) || subtotal > 999999999 || !Number.isFinite(total) || total > 999999999) {
+          error.textContent = "The subtotal and final bill must each be no more than ₹999,999,999.";
+        } else if (!Number.isFinite(discount) || discount < 0 || discount > subtotal || !Number.isFinite(taxPercent) || taxPercent < 0 || taxPercent > 100) {
+          error.textContent = "Discount must be between zero and the subtotal, and tax must be from 0% to 100%.";
+        } else if (!Number.isFinite(advance) || advance < 0 || advance > total) {
+          error.textContent = "Advance payment must be zero or more and cannot exceed the final bill.";
+        } else if (!receivedDate || !deliveryDate || deliveryDate < receivedDate) {
+          error.textContent = "Expected delivery must be on or after the received date.";
+        } else if (!stages.includes(stage)) {
+          error.textContent = "Choose a valid initial processing status.";
+        } else if (!registeringNew && !customers.some((customer) => customer.id === customerId)) {
+          error.textContent = "Select an existing customer or register a new customer before creating the order.";
+        } else if (registeringNew && !String(data.get("newCustomerName") || "").trim()) {
+          error.textContent = "Enter the new customer's full name.";
+        } else if (registeringNew && !/^[6-9]\d{9}$/.test(normalizePhone(data.get("newCustomerPhone")))) {
+          error.textContent = "Enter a valid 10-digit Indian mobile number, optionally with the +91 country code.";
+        }
+        if (error.textContent) {
+          error.classList.add("visible");
+          return;
+        }
+        const previousOrders = JSON.stringify(orders);
+        const previousCustomers = JSON.stringify(customers);
+        const previousLocations = JSON.stringify(storageLocations);
+        let customer = customers.find((item) => !registeringNew && item.id === customerId);
+        if (registeringNew) {
+          const phone = String(data.get("newCustomerPhone")).trim();
+          const normalized = normalizePhone(phone);
+          customer = customers.find((item) => normalizePhone(item.phone) === normalized);
+          if (!customer) {
+            customer = {
+              id: createId("CUS"),
+              name: String(data.get("newCustomerName")).trim(),
+              phone,
+              address: String(data.get("newCustomerAddress") || "").trim(),
+              registrationDate: receivedDate
+            };
+            customers.push(customer);
+          }
+        }
+        const order = normalizeOrder({
+          id: generateOrderNumber(),
+          customerId: customer.id,
+          customerName: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          items: items.map((item) => ({ ...item, lineTotal: roundMoney(item.quantity * item.unitPrice) })),
+          quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+          service: items[0].service,
+          stage,
+          rack: String(data.get("rack") || "").trim(),
+          storageLocation: stage === "Delivered" ? "" : String(data.get("rack") || "").trim(),
+          stageHistory: [{ stage, timestamp: new Date().toISOString() }],
+          subtotal,
+          discount,
+          taxPercent,
+          taxAmount,
+          total,
+          advance,
+          paid: advance,
+          payments: [],
+          paymentMethod: String(data.get("paymentMethod") || "Cash"),
+          receivedDate,
+          deliveryDate,
+          actualDeliveryDate: stage === "Delivered" ? localDate() : "",
+          notes: String(data.get("notes") || "").trim(),
+          washingInstructions: String(data.get("washingInstructions") || "").trim()
+        });
+        const orderId = order.id;
+        orders = [order, ...orders];
+        reconcileCustomers(customers);
+        storageLocations = normalizeStorageLocations(storageLocations);
+        if (!saveOrders()) {
+          orders = JSON.parse(previousOrders);
+          customers = JSON.parse(previousCustomers);
+          storageLocations = JSON.parse(previousLocations);
+          return;
+        }
+        lastCreatedOrderId = orderId;
+        selectedOrderCustomerId = customer.id;
+        render();
+        renderSearchResults(globalSearch.value.trim());
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const total = Number(data.get("total"));
+        const advance = Number(data.get("paid") || 0);
+        const items = readItemEditor("item-editor");
+        const quantity = items.reduce((sum, item) => sum + item.quantity, 0);
+        const stage = String(data.get("stage"));
+        const receivedDate = String(data.get("receivedDate"));
+        const deliveryDate = String(data.get("deliveryDate"));
+        const actualDeliveryDate = String(data.get("actualDeliveryDate") || "");
+        if (!storageAvailable) {
+          errorBox.textContent = "Saving is unavailable because this browser could not access saved order data.";
+          errorBox.classList.add("visible");
+          return;
+        }
+        if (!items.length || items.some((item) => !item.name || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10000 || !Number.isFinite(item.unitPrice) || item.unitPrice < 0 || item.unitPrice > 999999 || !services.includes(item.service))
+          || !Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(total) || total < 0 || !Number.isFinite(advance) || advance < 0
+          || advance + (orders.find((item) => item.id === editingId) ? orderPaymentsTotal(orders.find((item) => item.id === editingId)) : 0) > total) {
+          errorBox.textContent = "Each clothing item needs a name, quantity from 1 to 10,000, valid service, and price from ₹0 to ₹999,999. Advance and additional payments cannot exceed the total bill.";
+          errorBox.classList.add("visible");
+          return;
+        }
+        if (!stages.includes(stage) || !receivedDate || !deliveryDate || deliveryDate < receivedDate || (actualDeliveryDate && actualDeliveryDate < receivedDate)) {
+          errorBox.textContent = "Choose a valid status and dates. Expected and actual delivery dates must be on or after the date received.";
+          errorBox.classList.add("visible");
+          return;
+        }
+        const values = Object.fromEntries(data.entries());
+        const existing = orders.find((item) => item.id === editingId);
+        const phone = String(values.phone || "").trim();
+        let customer = customers.find((item) => normalizePhone(item.phone) && normalizePhone(item.phone) === normalizePhone(phone));
+        if (!customer && existing) customer = customers.find((item) => item.id === existing.customerId);
+        if (!customer && !normalizePhone(phone)) customer = customers.find((item) => normalizeName(item.name) === normalizeName(values.customerName));
+        if (customer && customer.id !== (existing && existing.customerId)) {
+          values.customerName = customer.name;
+          values.phone = customer.phone;
+        }
+        const previousOrders = JSON.stringify(orders);
+        const previousCustomers = JSON.stringify(customers);
+        const previousLocations = JSON.stringify(storageLocations);
+        if (!customer) {
+          customer = {
+            id: createId("CUS"), name: String(values.customerName).trim(), phone,
+            address: "", registrationDate: receivedDate
+          };
+          customers.push(customer);
+        }
+        const newStage = stage;
+        const order = {
+          ...(existing || {}),
+          ...values,
+          id: editingId || createId("FW"),
+          customerId: customer.id,
+          customerName: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          items: items.map((item) => ({ ...item, lineTotal: roundMoney(item.quantity * item.unitPrice) })),
+          quantity,
+          service: items[0].service,
+          stage: existing ? existing.stage : newStage,
+          total,
+          subtotal: existing ? existing.subtotal : total,
+          discount: existing ? existing.discount : 0,
+          taxPercent: existing ? existing.taxPercent : 0,
+          taxAmount: existing ? existing.taxAmount : 0,
+          advance,
+          payments: existing ? existing.payments : [],
+          paid: advance + (existing ? orderPaymentsTotal(existing) : 0),
+          paymentMethod: existing ? existing.paymentMethod : "Cash",
+          washingInstructions: existing ? existing.washingInstructions : "",
+          stageHistory: existing ? [...existing.stageHistory] : [{ stage: newStage, timestamp: new Date().toISOString() }],
+          storageLocation: newStage === "Delivered" ? "" : String(values.rack || ""),
+          actualDeliveryDate: stage === "Delivered" ? (actualDeliveryDate || existing && existing.actualDeliveryDate || localDate()) : (actualDeliveryDate || existing && existing.actualDeliveryDate || ""),
+          receivedDate,
+          deliveryDate
+        };
+        if (existing && newStage !== existing.stage) transitionOrderStage(order, newStage);
+        orders = editingId ? orders.map((item) => item.id === editingId ? order : item) : [order, ...orders];
+        reconcileCustomers(customers);
+        storageLocations = normalizeStorageLocations(storageLocations);
+        if (!saveOrders()) {
+          orders = JSON.parse(previousOrders);
+          customers = JSON.parse(previousCustomers);
+          storageLocations = JSON.parse(previousLocations);
+          return;
+        }
+        closeModal();
+        render();
+        renderSearchResults(globalSearch.value.trim());
+      });
+      pageContent.addEventListener("submit", (event) => {
+        const addLocationForm = event.target.closest("#rack-add-form");
+        if (addLocationForm) {
+          event.preventDefault();
+          const data = new FormData(addLocationForm);
+          const name = String(data.get("name") || "").trim();
+          const rawCapacity = String(data.get("capacity") || "").trim();
+          const capacity = rawCapacity ? Number(rawCapacity) : null;
+          if (!name || (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 100000))) {
+            window.alert("Enter a location name and a whole-number capacity from 1 to 100,000, or leave capacity blank for unlimited.");
+            return;
+          }
+          if (storageLocations.some((location) => location.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+            window.alert("A storage location with that name already exists.");
+            return;
+          }
+          const previousLocations = JSON.stringify(storageLocations);
+          storageLocations = normalizeStorageLocations([...storageLocations, { name, capacity, isFull: false }]);
+          if (!saveOrders()) {
+            storageLocations = JSON.parse(previousLocations);
+            return;
+          }
+          render();
+          return;
+        }
+        const locationForm = event.target.closest("[data-order-location-form]");
+        if (locationForm) {
+          event.preventDefault();
+          const order = orders.find((item) => item.id === locationForm.dataset.orderLocationForm);
+          const name = String(new FormData(locationForm).get("location") || "");
+          const location = storageLocations.find((item) => item.name === name);
+          const error = locationForm.parentElement.querySelector("[data-assignment-error]");
+          error.textContent = "";
+          error.classList.remove("visible");
+          if (!order || (name && !location)) return;
+          if (location && !canAssignLocation(location, order)) {
+            error.textContent = location.isFull ? "This location is marked full. Clear its full flag or choose another location."
+              : "This assignment would exceed the location's clothing capacity.";
+            error.classList.add("visible");
+            return;
+          }
+          const previousOrders = JSON.stringify(orders);
+          order.storageLocation = name;
+          if (name) order.rack = name;
+          if (!saveOrders()) {
+            orders = JSON.parse(previousOrders);
+            return;
+          }
+          feedbackMessage = `Order #${order.id} location updated${name ? ` to ${name}` : ""}.`;
+          render();
+          return;
+        }
+        const customerForm = event.target.closest("#customer-info-form");
+        if (customerForm) {
+          event.preventDefault();
+          const customer = customers.find((item) => item.id === customerForm.dataset.id);
+          if (!customer) return;
+          const data = new FormData(customerForm);
+          const name = String(data.get("name") || "").trim();
+          const phone = String(data.get("phone") || "").trim();
+          const normalizedPhone = normalizePhone(phone);
+          const duplicate = normalizedPhone && customers.find((item) => item.id !== customer.id && normalizePhone(item.phone) === normalizedPhone);
+          const error = document.getElementById("customer-form-error");
+          if (duplicate) {
+            error.textContent = "That mobile number is already linked to another customer. Update that customer record instead to avoid duplicates.";
+            error.classList.add("visible");
+            return;
+          }
+          if (!name) {
+            error.textContent = "Enter the customer's full name.";
+            error.classList.add("visible");
+            return;
+          }
+          const previousOrders = JSON.stringify(orders);
+          const previousCustomers = JSON.stringify(customers);
+          customer.name = name;
+          customer.phone = phone;
+          customer.address = String(data.get("address") || "").trim();
+          orders.forEach((order) => {
+            if (order.customerId === customer.id) {
+              order.customerName = customer.name;
+              order.phone = customer.phone;
+              order.address = customer.address;
+            }
+          });
+          reconcileCustomers(customers);
+          if (!saveOrders()) {
+            orders = JSON.parse(previousOrders);
+            customers = JSON.parse(previousCustomers);
+            return;
+          }
+          feedbackMessage = `Customer information for ${customer.name} was saved.`;
+          render();
+          renderSearchResults(globalSearch.value.trim());
+          return;
+        }
+        const paymentForm = event.target.closest("[data-payment-form]");
+        if (!paymentForm) return;
+        event.preventDefault();
+        const order = orders.find((item) => item.id === paymentForm.dataset.id);
+        const data = new FormData(paymentForm);
+        const amount = roundMoney(Number(data.get("amount")));
+        const date = String(data.get("date") || "");
+        const method = String(data.get("method") || "");
+        const reference = String(data.get("reference") || "").trim();
+        const error = paymentForm.querySelector("[data-payment-error]");
+        if (error) {
+          error.textContent = "";
+          error.classList.remove("visible");
+        }
+        let message = "";
+        if (!order) message = "This order could not be found. Refresh the page and try again.";
+        else if (!Number.isFinite(amount) || amount <= 0) message = "Enter a payment amount greater than zero.";
+        else if (amount > dueBalance(order)) message = `Payment exceeds the outstanding balance of ${formatMoney(dueBalance(order))}.`;
+        else if (!date || Number.isNaN(new Date(`${date}T00:00:00`).getTime())) message = "Choose a valid payment date.";
+        else if (!["Cash", "UPI", "Card"].includes(method)) message = "Choose Cash, UPI, or Card as the payment method.";
+        else if (reference.length > 80) message = "Transaction reference must be 80 characters or fewer.";
+        if (message) {
+          if (error) {
+            error.textContent = message;
+            error.classList.add("visible");
+          } else {
+            window.alert(message);
+          }
+          return;
+        }
+        const previousOrders = JSON.stringify(orders);
+        order.payments.push({ amount, date, method, reference });
+        order.paid = orderPaid(order);
+        if (!saveOrders()) {
+          orders = JSON.parse(previousOrders);
+          return;
+        }
+        feedbackMessage = `Payment of ${formatMoney(amount)} recorded for order #${order.id}.`;
+        render();
+      });
+      document.getElementById("close-modal").addEventListener("click", closeModal);
+      document.getElementById("cancel-modal").addEventListener("click", closeModal);
+      modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !modal.hidden) closeModal();
+        if (event.key === "Escape") closeSidebar();
+      });
+      document.getElementById("delete-order").addEventListener("click", () => {
+        const order = orders.find((item) => item.id === editingId);
+        if (!order || !window.confirm(`Delete order #${order.id} for ${order.customerName}? This cannot be undone.`)) return;
+        const previousOrders = orders;
+        orders = orders.filter((item) => item.id !== editingId);
+        if (!saveOrders()) { orders = previousOrders; return; }
+        closeModal();
+        render();
+      });
+      document.getElementById("mobile-menu").addEventListener("click", () => {
+        const sidebar = document.getElementById("sidebar");
+        const open = !sidebar.classList.contains("open");
+        sidebar.classList.toggle("open", open);
+        document.getElementById("mobile-scrim").classList.toggle("visible", open);
+        document.getElementById("mobile-menu").setAttribute("aria-expanded", String(open));
+      });
+      document.getElementById("mobile-scrim").addEventListener("click", closeSidebar);
+
+      orders = loadOrders();
+      render();
+    })();
+  </script>
+</body>
+</html>
